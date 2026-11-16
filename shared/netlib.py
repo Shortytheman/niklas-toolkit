@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.13.0"
+VERSION = "0.14.0"
 DEFAULT_TIMEOUT = 20
 RETRY_STATUSES = {429, 502, 503, 504}
 

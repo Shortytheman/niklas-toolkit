@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0 (2026-11-16)
+
+- **audit/usage_report** shows where your tokens go: by day, project, model and session, with the cache share,
+  subagent share, peak context and compactions per session, and the most-used tools. It reads token counts from
+  the local session logs, never message text.
+- **Skill trigger evals**: every skill has cases in `packs/<pack>/evals/` (22 in all) that check it loads on a
+  naturally phrased request, plus nearby requests that must load no skill. `tools/run_evals.py` runs them with
+  `claude plugin eval` and writes `docs/evals.md`; a test fails when a skill has no trigger case.
+
 ## 0.13.0 (2026-11-16)
 
 - **godot/godot_api** looks up the exact engine API of the Godot version the project uses, read from that Godot

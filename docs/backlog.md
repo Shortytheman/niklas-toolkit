@@ -4,9 +4,11 @@ Ideas and fixes waiting for real use to justify them. The `learn` skill adds lin
 
 - Godot test runner (GUT or gdUnit4): build when a project adopts one of them.
 - Demo recording for the README.
+- Run the trigger evals (`python tools/run_evals.py`) after `claude /login` in a terminal, and commit `docs/evals.md`.
 
 ## Done
 
+- `usage_report`, skill trigger evals (0.14.0)
 - `godot_api` engine API lookup and MCP tool (0.13.0)
 - `pck_size` build size reports, `env_doctor`, scheduled brief survives plugin updates (0.12.0)
 - Daily brief: `--save` and `schedule_brief.py` (0.11.0)
