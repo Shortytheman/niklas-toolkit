@@ -35,7 +35,7 @@ the script says what to add; offer to add it with the user's values, and never i
   when it matters for the answer.
 - For a daily brief without opening Claude, `python schedule_brief.py` shows the scheduled-task command
   (Windows) or crontab line (Linux/macOS); briefs are saved with `brief.py --save`. Creating the task changes the
-  user's system: show the command and run `--create` only when they say so. After a plugin update, the task
-  must be created again because the plugin's folder changes.
+  user's system: show the command and run `--create` only when they say so. The task follows plugin updates by
+  itself; if a scheduled brief is missing, read `briefs/last-run.log` in the toolkit folder.
 
 Market sections (currencies, crypto, stocks, portfolio) follow the markets skill's rules.

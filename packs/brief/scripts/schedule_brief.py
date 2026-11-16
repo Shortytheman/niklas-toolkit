@@ -9,8 +9,9 @@
 Each run executes `brief.py --save`, which writes <toolkit folder>/briefs/brief-YYYY-MM-DD.md. On Linux and macOS
 this prints a crontab line to add with `crontab -e`; it never edits your crontab.
 
-Creating a scheduled task changes your system, so nothing is created without --create. The task points at
-this copy of brief.py: after updating the plugin (a new version lives in a new folder), run --create again.
+Creating a scheduled task changes your system, so nothing is created without --create. The task runs a small
+launcher, <toolkit folder>/run_brief.py, which picks the newest installed version of the brief plugin each
+morning, so plugin updates do not break the task. Its output goes to briefs/last-run.log.
 Exit codes: 0 ok, 1 schtasks failed, 2 bad arguments.
 """
 from __future__ import annotations
@@ -29,6 +30,57 @@ import netlib  # noqa: E402
 TASK = "niklas-toolkit brief"
 BRIEF = Path(__file__).resolve().parent / "brief.py"
 
+# Written to <toolkit folder>/run_brief.py. Installed plugins live in .../plugins/cache/<marketplace>/brief/<version>/,
+# and an update adds a new version folder, so the launcher looks for the newest one instead of a fixed path.
+LAUNCHER = '''# Written by schedule_brief.py. Runs the newest installed brief plugin with --save; output goes to briefs/last-run.log.
+import re, runpy, sys, traceback
+from pathlib import Path
+
+FALLBACK = Path({fallback!r})
+
+
+def newest():
+    if len(FALLBACK.parents) < 5 or FALLBACK.parents[4].name != "cache":   # a source checkout: use it as it is
+        return FALLBACK
+    found = []
+    for p in FALLBACK.parents[2].glob("*/scripts/brief.py"):
+        m = re.fullmatch(r"(\\d+)\\.(\\d+)\\.(\\d+)", p.parents[1].name)
+        if m:
+            found.append((tuple(int(x) for x in m.groups()), str(p)))
+    return Path(max(found)[1]) if found else FALLBACK
+
+
+log_dir = Path(__file__).resolve().parent / "briefs"
+log_dir.mkdir(parents=True, exist_ok=True)
+with open(log_dir / "last-run.log", "w", encoding="utf-8") as log:
+    sys.stdout = sys.stderr = log
+    brief = newest()
+    print(f"Running {{brief}}")
+    sys.path.insert(0, str(brief.parent))
+    sys.argv = [str(brief), "--save"]
+    try:
+        runpy.run_path(str(brief), run_name="__main__")
+    except SystemExit as e:
+        code = e.code if isinstance(e.code, int) else (0 if e.code is None else 1)
+    except Exception:
+        traceback.print_exc()
+        code = 1
+    else:
+        code = 0
+sys.exit(code)
+'''
+
+
+def launcher_path() -> Path:
+    return netlib.app_dir() / "run_brief.py"
+
+
+def write_launcher() -> Path:
+    path = launcher_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(LAUNCHER.format(fallback=str(BRIEF)), encoding="utf-8")
+    return path
+
 
 def python_exe() -> str:
     """A real interpreter path: scheduled tasks do not have your shell's PATH shims (pyenv, Store aliases)."""
@@ -38,13 +90,13 @@ def python_exe() -> str:
 
 
 def windows_create(time: str) -> list[str]:
-    action = f'"{python_exe()}" "{BRIEF}" --save'
+    action = f'"{python_exe()}" "{launcher_path()}"'
     return ["schtasks", "/Create", "/F", "/SC", "DAILY", "/TN", TASK, "/TR", action, "/ST", time]
 
 
 def cron_line(time: str) -> str:
     hour, minute = time.split(":")
-    return f'{int(minute)} {int(hour)} * * * "{sys.executable}" "{BRIEF}" --save >/dev/null 2>&1'
+    return f'{int(minute)} {int(hour)} * * * "{sys.executable}" "{launcher_path()}" >/dev/null 2>&1'
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -61,6 +113,8 @@ def main(argv: list[str] | None = None) -> int:
     briefs = netlib.app_dir() / "briefs"
 
     if not windows:
+        if a.create:
+            print(f"Wrote {write_launcher()}")
         if a.create or a.remove:
             print("On Linux and macOS this script does not edit your crontab. Add or remove this line with "
                   "`crontab -e`:")
@@ -81,6 +135,7 @@ def main(argv: list[str] | None = None) -> int:
     if not shutil.which("schtasks"):
         print("ERROR: schtasks not found", file=sys.stderr)
         return 1
+    write_launcher()
     r = subprocess.run(cmd, capture_output=True, text=True)
     print((r.stdout or r.stderr).strip())
     if r.returncode == 0:

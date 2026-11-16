@@ -352,7 +352,7 @@ def test_schedule_brief(monkeypatch, capsys):
     import schedule_brief
     cmd = schedule_brief.windows_create("06:45")
     assert cmd[:2] == ["schtasks", "/Create"] and cmd[cmd.index("/ST") + 1] == "06:45"
-    assert cmd[cmd.index("/TR") + 1].endswith('brief.py" --save')
+    assert cmd[cmd.index("/TR") + 1].endswith('run_brief.py"')
     assert schedule_brief.cron_line("06:45").startswith("45 6 * * * ")
     assert schedule_brief.main(["--time", "7:5"]) == 2
     monkeypatch.setattr(schedule_brief.platform, "system", lambda: "Linux")
@@ -367,3 +367,32 @@ def test_brief_save(net, tmp_path, monkeypatch, capsys):
     assert brief.main() == 0
     saved = list((tmp_path / "toolkit-home" / "briefs").glob("brief-*.md"))
     assert len(saved) == 1 and "Next holiday:" in saved[0].read_text(encoding="utf-8")
+
+
+def test_schedule_launcher_runs_newest_installed_version(tmp_path, monkeypatch):
+    """Plugin updates add a version folder; the scheduled launcher must follow them instead of a fixed path."""
+    import subprocess
+    import schedule_brief
+    cache = tmp_path / "claude" / "plugins" / "cache" / "niklas-toolkit" / "brief"
+    for version, text in [("0.9.0", "old"), ("0.11.0", "new"), ("0.10.0", "middle")]:
+        scripts = cache / version / "scripts"
+        scripts.mkdir(parents=True)
+        (scripts / "brief.py").write_text(f"import sys\nprint('{text}', sys.argv[1:])\n", encoding="utf-8")
+    home = tmp_path / "home"
+    monkeypatch.setenv("TOOLKIT_HOME", str(home))
+    monkeypatch.setattr(schedule_brief, "BRIEF", cache / "0.9.0" / "scripts" / "brief.py")
+    launcher = schedule_brief.write_launcher()
+    assert launcher == home / "run_brief.py"
+    assert str(launcher) in schedule_brief.windows_create("07:30")[-3]
+    r = subprocess.run([sys.executable, str(launcher)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    log = (home / "briefs" / "last-run.log").read_text(encoding="utf-8")
+    assert "new ['--save']" in log and "0.11.0" in log
+
+    # A source checkout (not under plugins/cache) is used as it is.
+    checkout = tmp_path / "repo" / "packs" / "brief" / "scripts" / "brief.py"
+    checkout.parent.mkdir(parents=True)
+    checkout.write_text("raise SystemExit(3)\n", encoding="utf-8")
+    monkeypatch.setattr(schedule_brief, "BRIEF", checkout)
+    schedule_brief.write_launcher()
+    assert subprocess.run([sys.executable, str(launcher)]).returncode == 3
