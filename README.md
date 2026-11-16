@@ -14,7 +14,7 @@ Three rules shape it:
 ## Install
 
 ```bash
-claude plugin marketplace add <owner>/<repo>
+claude plugin marketplace add Shortytheman/niklas-toolkit
 ```
 
 ```text
