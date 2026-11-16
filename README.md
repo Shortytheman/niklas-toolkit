@@ -102,7 +102,8 @@ Local and read-only: reads `~/.claude` and the project's `.claude`, changes noth
 | `doctor` | script + skill | Finds broken `res://` paths, wrong letter case (fine on Windows, broken in exports), stale and unknown uids, duplicate `class_name`s, leftover `.import`/`.uid` files, and unused files, without running Godot |
 | `scene-rules` | skill | Rules for editing `.tscn` / `.tres` files as text, written for Godot 4.7 |
 | GDScript lint | hook | After every edit to a `.gd` file, reports the lint problems and syntax errors that edit introduced, compared with git HEAD |
-| `godot-index` | MCP server | A scene's node tree, every use of a resource (by `res://` path or `uid://`), where a symbol is defined, and which files nothing references |
+| `godot-index` | MCP server | A scene's node tree, every use of a resource (by `res://` path or `uid://`), where a symbol is defined, which files nothing references, and the exact engine API of the project's Godot version |
+| `godot-api` | script + skill | The exact engine API of the Godot version you use, read from the Godot executable itself: signatures (inherited members too), properties, signals, enums and theme items. Flags Godot 3 names (`KinematicBody2D` → `CharacterBody2D`); `--describe` adds the official text and deprecation notes for that version tag |
 
 `godot-index` speaks the MCP protocol directly in standard-library Python (JSON-RPC over stdio), so it starts with
 the pack and needs no SDK. Game runs from `run` and `screenshot` use their own user data folder

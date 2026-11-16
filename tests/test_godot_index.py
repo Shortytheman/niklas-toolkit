@@ -122,7 +122,9 @@ def test_server_protocol(project):
     assert [r["id"] for r in replies] == [1, 2, 3, 4, 5]  # the notification gets no reply
     assert replies[0]["result"]["protocolVersion"] == "2025-06-18"
     assert {t["name"] for t in replies[1]["result"]["tools"]} == {
-        "godot_scene_tree", "godot_find_usages", "godot_find_symbol", "godot_unused_files"}
+        "godot_scene_tree", "godot_find_usages", "godot_find_symbol", "godot_unused_files", "godot_api"}
+    version = json.loads((ROOT / "packs" / "godot" / ".claude-plugin" / "plugin.json").read_text())["version"]
+    assert replies[0]["result"]["serverInfo"]["version"] == version
     assert "res://main.tscn:5" in replies[2]["result"]["content"][0]["text"]
     assert replies[3]["result"]["isError"] is True
     assert replies[4]["error"]["code"] == -32601

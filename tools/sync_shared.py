@@ -11,7 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 COPIES = {
-    "shared/netlib.py": ["packs/deps/scripts/netlib.py", "packs/brief/scripts/netlib.py"],
+    "shared/netlib.py": ["packs/deps/scripts/netlib.py", "packs/brief/scripts/netlib.py",
+                         "packs/godot/scripts/netlib.py"],
 }
 HEADER = "# GENERATED from {src} by tools/sync_shared.py; edit the master copy, not this file.\n"
 

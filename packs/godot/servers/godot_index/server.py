@@ -8,6 +8,7 @@ Tools:
   godot_find_usages    every file and line that references a resource (by res:// path or uid://)
   godot_find_symbol    where a class_name, func, signal, const, var, enum or autoload is defined
   godot_unused_files   resources nothing references, with a note when a dynamic load may still use them
+  godot_api            exact engine API (signatures, properties, signals, enums) of the project's Godot version
 
 The project is the `project` argument, else $CLAUDE_PROJECT_DIR, else the working directory: the folder that holds
 project.godot, a parent of it, or a folder up to two levels below it.
@@ -21,9 +22,19 @@ import traceback
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+import godot_api  # noqa: E402
 from godot_index import Index, scene_tree  # noqa: E402
 
-SERVER_INFO = {"name": "godot-index", "version": "0.1.0"}
+
+def _plugin_version() -> str:
+    try:
+        manifest = Path(__file__).resolve().parents[2] / ".claude-plugin" / "plugin.json"
+        return json.loads(manifest.read_text(encoding="utf-8"))["version"]
+    except (OSError, ValueError, KeyError):
+        return "0.0.0"
+
+
+SERVER_INFO = {"name": "godot-index", "version": _plugin_version()}
 PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"]
 
 PROJECT_PROP = {"type": "string", "description": "Godot project folder. Optional: defaults to the current project."}
@@ -71,6 +82,22 @@ TOOLS = [
 ]
 
 
+API_TOOL = {
+    "name": "godot_api",
+    "description": "Exact Godot engine API for the project's Godot version: 'Class' (overview), "
+                   "'Class.member' (signature, inherited members too), 'member' (classes that have it). Use "
+                   "before writing engine calls you are not sure exist in this version; it flags Godot 3 names.",
+    "inputSchema": {"type": "object", "properties": {
+        "query": {"type": "string", "description": "e.g. Tween, Tween.tween_method, get_global_mouse_position"},
+        "search": {"type": "boolean", "description": "list names containing the query text instead"},
+        "full": {"type": "boolean", "description": "with a class: every signature"},
+        "describe": {"type": "boolean", "description": "add the official description and deprecation notes"},
+        "project": PROJECT_PROP}, "required": ["query"]},
+    "annotations": {"readOnlyHint": True},
+}
+TOOLS.append(API_TOOL)
+
+
 def find_project(hint: str | None) -> Path:
     start = Path(hint or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()).resolve()
     for d in [start, *start.parents]:
@@ -84,6 +111,16 @@ def find_project(hint: str | None) -> Path:
 
 
 def call_tool(name: str, args: dict) -> str:
+    if name == "godot_api":
+        try:
+            project = find_project(args.get("project"))
+        except ValueError:
+            project = None          # no project: Godot from $GODOT_BIN or PATH
+        try:
+            return godot_api.answer(project, args["query"], full=bool(args.get("full")),
+                                    find=bool(args.get("search")), desc=bool(args.get("describe")))
+        except godot_api.NotFound as e:
+            return str(e)
     project = find_project(args.get("project"))
     if name == "godot_scene_tree":
         return scene_tree(project, args["scene"])
@@ -131,7 +168,7 @@ def handle(msg: dict) -> dict | None:
         try:
             text = call_tool(params.get("name", ""), params.get("arguments") or {})
             result = {"content": [{"type": "text", "text": text}], "isError": False}
-        except (ValueError, FileNotFoundError, KeyError) as e:
+        except (ValueError, FileNotFoundError, KeyError, godot_api.SetupError, godot_api.netlib.NetError) as e:
             result = {"content": [{"type": "text", "text": f"Error: {e}"}], "isError": True}
         except Exception:  # noqa: BLE001 - report, never crash the server
             result = {"content": [{"type": "text", "text": traceback.format_exc(limit=3)}], "isError": True}

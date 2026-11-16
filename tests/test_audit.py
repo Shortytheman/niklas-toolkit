@@ -137,7 +137,7 @@ def test_measure_real_stdio_server():
         "command": sys.executable, "args": ["${CLAUDE_PLUGIN_ROOT}/servers/godot_index/server.py"]},
         ROOT / "packs" / "godot")
     m = mcp_cost.measure(server)
-    assert m.error == "" and m.tools == 4 and m.tokens > 200
+    assert m.error == "" and m.tools == 5 and m.tokens > 200
 
 
 def test_measure_failures():
