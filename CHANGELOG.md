@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.0 (2026-11-16)
+
+- **godot/pck_size** shows what makes a build big: sizes by source folder, by kind and the largest files, read
+  straight from the `.pck`, an executable with the pack embedded, or the build zip, without Godot. Exported files
+  are named after their source (`art/hero.png`, not `.godot/imported/hero.png-<hash>.ctex`). `--compare` lists
+  what grew, shrank, appeared or went away since an older build.
+- **audit/env_doctor** checks the machine behind failing tools: Git Bash, Store and pyenv Python, CRLF shell
+  scripts and missing `eol=lf` rules, `npx` MCP servers without `cmd /c` on Windows, the PowerShell execution
+  policy, long paths, and dead or duplicate PATH entries. Read-only.
+- **brief**: the scheduled brief keeps working after plugin updates. The task runs a small launcher that picks
+  the newest installed version each morning and logs to `briefs/last-run.log`. Run `schedule_brief.py --create`
+  once more to switch an existing task to it.
+
 ## 0.11.0 (2026-11-16)
 
 - **brief --save** writes a dated copy of the brief to the toolkit folder, and **schedule_brief.py** shows the

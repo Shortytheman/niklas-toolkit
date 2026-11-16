@@ -1,6 +1,6 @@
 {
   "name": "brief",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Everyday information on request: a morning brief, weather, headlines and new releases, Danish holidays, and markets (exchange rates, crypto, stocks with your own free key, portfolio from your CSV). Descriptive numbers only, never investment advice.",
   "author": {
     "name": "Niklas"
