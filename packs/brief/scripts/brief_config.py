@@ -27,7 +27,7 @@ TEMPLATE = {
     "stocks": {"providers": ["finnhub", "tiingo", "yahoo"], "allow_unofficial_yahoo": False},
     "brief": {"sections": ["weather", "holidays", "fx", "crypto", "stocks", "portfolio", "news", "releases"],
               "hn": 5},
-    "keys": {"FINNHUB_API_KEY": "", "TIINGO_API_KEY": "", "COINGECKO_DEMO_KEY": ""},
+    "keys": {"FINNHUB_API_KEY": "", "TIINGO_API_KEY": "", "COINGECKO_DEMO_KEY": "", "FRED_API_KEY": ""},
 }
 
 

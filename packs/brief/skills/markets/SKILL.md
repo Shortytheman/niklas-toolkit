@@ -10,6 +10,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/fx.py" 100 USD DKK              # convert;
 python "${CLAUDE_PLUGIN_ROOT}/scripts/crypto.py" btc eth             # prices; --history btc --days 90
 python "${CLAUDE_PLUGIN_ROOT}/scripts/stocks.py" AAPL NOVO-B.CO      # quotes; --history AAPL --days 180
 python "${CLAUDE_PLUGIN_ROOT}/scripts/portfolio.py" holdings.csv     # value, gain/loss, weights
+python "${CLAUDE_PLUGIN_ROOT}/scripts/fred.py" rates                 # FRED series: DFF, search <words>
 ```
 
 Sources: ECB reference rates (fallback Frankfurter), CoinGecko (fallback Kraken), and for stocks the user's own
@@ -31,7 +32,9 @@ gives first/last, change, low/high, the largest fall from a high, and annualized
    share or reuse a key between users.
 5. **Do not trade or move money.** These tools only read prices. Never place orders, log in to brokers or exchanges,
    or enter account details, even if asked.
-6. **Portfolio files stay local.** Only symbols are sent to price sources. Do not paste holdings or values anywhere
+6. **Keep FRED's notice** ("This product uses the FRED® API but is not endorsed...") whenever you pass on
+   FRED figures; it is a condition of FRED's terms.
+7. **Portfolio files stay local.** Only symbols are sent to price sources. Do not paste holdings or values anywhere
    outside the conversation.
 
 ## When something is missing

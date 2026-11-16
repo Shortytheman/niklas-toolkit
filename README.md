@@ -68,6 +68,7 @@ Reads `requirements*.txt`, `poetry.lock`, `uv.lock`, `Pipfile.lock`, `pdm.lock`,
 | `fx` | script + `markets` skill | Exchange rates and history from the ECB (fallback Frankfurter) |
 | `crypto` | script + `markets` skill | Prices and history from CoinGecko (fallback Kraken) |
 | `stocks` | script + `markets` skill | Quotes and history with your own free Finnhub or Tiingo key; Nordic tickers like `NOVO-B.CO` through an opt-in, clearly labelled unofficial Yahoo source |
+| `fred` | script + `markets` skill | US and international economic series from FRED (interest rates, inflation, jobs) with your own free key, and series search |
 | `portfolio` | script + `markets` skill | Values your holdings CSV in DKK (or another currency): value, gain/loss, weight |
 
 **Information only, never investment advice.** The scripts print descriptive numbers (prices, changes, low/high,

@@ -325,3 +325,24 @@ def test_dmi_forecast(net, tmp_path):
 def urllib_unquote(url):
     import urllib.parse
     return urllib.parse.unquote_plus(url)
+
+
+def test_fred(net, tmp_path, capsys, monkeypatch):
+    import fred
+    monkeypatch.setattr(sys, "argv", ["fred.py", "DFF"])
+    with pytest.raises(common.SetupError, match="free API key"):
+        fred.main()
+    write_config(tmp_path, {"keys": {"FRED_API_KEY": "k123"}})
+    net.add("api.stlouisfed.org/fred/series?", {"seriess": [{"id": "DFF", "title": "Federal Funds Effective Rate",
+                                                             "units_short": "%", "frequency": "Daily",
+                                                             "last_updated": "2026-11-13 15:16:01-06", "notes": ""}]})
+    net.add("api.stlouisfed.org/fred/series/observations", {"observations": [
+        {"date": "2026-11-13", "value": "3.88"}, {"date": "2026-11-12", "value": "."},
+        {"date": "2026-11-11", "value": "3.87"}, {"date": "2026-11-10", "value": "3.86"}]})
+    assert fred.main() == 0
+    out = capsys.readouterr().out
+    assert "DFF: Federal Funds Effective Rate (%, Daily, updated 2026-11-13)" in out
+    assert "2026-11-12  n/a" in out and "first 3.86, last 3.88, change +0.02" in out
+    assert fred.NOTICE in out                                   # required by FRED's terms
+    obs_url = next(u for _, u, _, _ in net.calls if "observations" in u)
+    assert "api_key=k123" in obs_url and "sort_order=desc" in obs_url
