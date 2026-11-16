@@ -112,3 +112,47 @@ def test_main_without_presets_is_setup_error(project_copy, tmp_path, capsys):
     fake.write_bytes(b"")
     assert export.main([str(project_copy("mini_project")), "--godot", str(fake)]) == 2
     assert "no presets" in capsys.readouterr().err
+
+
+def git_repo(project):
+    import subprocess
+    for args in (["init", "-q"], ["add", "-A"], ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init"]):
+        subprocess.run(["git", *args], cwd=project, check=True, capture_output=True)
+
+
+def test_write_checksum(tmp_path):
+    import hashlib
+    archive = tmp_path / "Game 1.0 windows.zip"
+    archive.write_bytes(b"zip bytes")
+    digest = export.write_checksum(archive)
+    assert digest == hashlib.sha256(b"zip bytes").hexdigest()
+    assert (tmp_path / "Game 1.0 windows.zip.sha256").read_text(encoding="utf-8") == f"{digest}  Game 1.0 windows.zip\n"
+
+
+def test_check_can_tag(project_copy):
+    project = project_copy("mini_project")
+    with pytest.raises(export.SetupError, match="git repository"):
+        export.check_can_tag(project, "v0.1.0")
+    git_repo(project)
+    export.check_can_tag(project, "v0.1.0")  # clean, no such tag: fine
+    (project / "main.gd").write_text("extends Node2D\n", encoding="utf-8")
+    with pytest.raises(export.SetupError, match="clean working tree"):
+        export.check_can_tag(project, "v0.1.0")
+
+
+def test_tag_release_commits_version_and_tags(project_copy, monkeypatch):
+    import subprocess
+    for var in ("GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME"):
+        monkeypatch.setenv(var, "t")
+    for var in ("GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL"):
+        monkeypatch.setenv(var, "t@t")
+    project = project_copy("mini_project")
+    git_repo(project)
+    export.write_project_version(project, "0.2.0")
+    message = export.tag_release(project, "v0.2.0", "0.2.0", version_changed=True)
+    assert message.startswith("tagged v0.2.0")
+    log = subprocess.run(["git", "log", "--format=%s", "-1"], cwd=project, capture_output=True, text=True).stdout
+    assert log.strip() == "Version 0.2.0"
+    assert subprocess.run(["git", "status", "--porcelain"], cwd=project, capture_output=True, text=True).stdout == ""
+    with pytest.raises(export.SetupError, match="already exists"):
+        export.check_can_tag(project, "v0.2.0")

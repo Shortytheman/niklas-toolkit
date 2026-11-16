@@ -90,3 +90,16 @@ def test_toolkit_json_is_not_scanned(tmp_path):
     (project / "toolkit.json").write_text(json.dumps({"doctor": {"ignore": ["res://nowhere/x.png"]}}),
                                           encoding="utf-8")
     assert "res://nowhere/x.png" not in Index.build(project).refs
+
+
+def test_duplicate_class_and_orphan_files(tmp_path):
+    project = make_project(tmp_path)
+    (project / "a.gd").write_text("class_name Hero\nextends Node\n", encoding="utf-8")
+    (project / "b.gd").write_text("extends Node\nclass_name Hero\n", encoding="utf-8")
+    (project / "gone.gd.uid").write_text("uid://gone0002\n", encoding="utf-8")
+    (project / "art" / "old.png.import").write_text('[remap]\nuid="uid://old00001"\n', encoding="utf-8")
+    groups = by_check(doctor(Index.build(project)))
+    assert sorted(f.file for f in groups["duplicate-class"]) == ["res://a.gd", "res://b.gd"]
+    assert "also declared in res://b.gd" in groups["duplicate-class"][0].message
+    assert sorted(f.file for f in groups["orphan-file"]) == ["res://art/old.png.import", "res://gone.gd.uid"]
+    assert all(f.severity == "warning" for f in groups["orphan-file"])

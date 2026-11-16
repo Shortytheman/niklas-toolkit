@@ -18,6 +18,8 @@ It reads every scene, resource, script and data file (no Godot needed, a few sec
 | `wrong-case` | the path's letter case differs from the file | fix the path to match the file exactly; Windows hides this, exports break on it |
 | `stale-uid` | an `ext_resource` uid names a different file than its path | Godot loads the uid's file; check which one is meant, then fix the path or remove the `uid="..."` so Godot regenerates it |
 | `unknown-uid` | a `uid://` nobody owns | replace it with the `res://` path |
+| `duplicate-class` | two scripts declare the same `class_name` | rename one class and update its users (`godot_find_symbol`) |
+| `orphan-file` | a `.import` or `.uid` file whose source file is gone | delete it; it was left by a delete or rename outside the editor |
 | `unused` | nothing references the file (`--unused` only) | candidates only, never delete without asking |
 
 Exit code 1 means errors were found, 0 none, 2 setup problem.

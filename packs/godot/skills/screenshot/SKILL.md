@@ -41,6 +41,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/screenshot.py" "<project folder>" --steps 
 | `waitfor:Settings are open` | waits up to 600 frames until such a control is visible |
 | `shot:settings` | saves `shot_settings.png` |
 
+Buttons without text (icon grids) are clicked by position inside their container: `click:GridContainer[3]`
+is the third visible button in it, counted row by row. The failure list names such containers.
+
 A control is found by the text on screen (translated, so `Settings` also finds a button whose text is the key
 `SETTINGS_BUTTON`), by its node name, or by its path from the root (`/root/Main/UI/StartButton`). Start with
 `wait:30` so the first screen has loaded.

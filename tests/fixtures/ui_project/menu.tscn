@@ -32,3 +32,23 @@ offset_top = 20.0
 offset_right = 300.0
 offset_bottom = 50.0
 text = "Settings are open"
+
+[node name="Icons" type="GridContainer" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 120.0
+offset_right = 200.0
+offset_bottom = 170.0
+columns = 3
+
+[node name="@Button@1" type="Button" parent="Icons"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="@Button@2" type="Button" parent="Icons"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="@Button@3" type="Button" parent="Icons"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2

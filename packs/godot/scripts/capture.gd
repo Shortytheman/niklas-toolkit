@@ -143,6 +143,23 @@ func _frames_pass(count: int) -> void:
 
 
 func _find_control(what: String, report: bool = true) -> Control:
+	# "GridContainer[3]": the 3rd visible button inside that control (for buttons without text, like icon grids)
+	var indexed: RegExMatch = RegEx.create_from_string("^(.+)\\[(\\d+)\\]$").search(what)
+	if indexed != null:
+		var container: Control = _find_control(indexed.get_string(1), report)
+		if container == null:
+			return null
+		var buttons: Array[Control] = []
+		for node in _all_nodes(container):
+			if node != container and node is BaseButton and (node as Control).is_visible_in_tree():
+				buttons.append(node)
+		var index: int = int(indexed.get_string(2))
+		if index >= 1 and index <= buttons.size():
+			return buttons[index - 1]
+		if report:
+			printerr("capture.gd: %s has %d visible button(s), asked for number %d" % [
+				indexed.get_string(1), buttons.size(), index])
+		return null
 	if what.begins_with("/"):
 		var node: Node = root.get_node_or_null(NodePath(what))
 		if node is Control and (node as Control).is_visible_in_tree():
@@ -207,7 +224,8 @@ func _print_visible_controls() -> void:
 			lines.append("  %s%s  (/root/%s)" % [node.name, " \"%s\"" % text if not text.is_empty() else "", path])
 	for parent in textless:
 		var entry: Array = textless[parent]
-		lines.append("  %d unnamed button(s) without text in /root/%s, e.g. %s" % [entry[0], parent, entry[1]])
+		lines.append("  %d button(s) without text in /root/%s: click one with %s[N]" % [
+			entry[0], parent, parent.get_file()])
 	printerr("capture.gd: visible buttons:\n" + ("\n".join(lines) if not lines.is_empty() else "  (none)"))
 
 

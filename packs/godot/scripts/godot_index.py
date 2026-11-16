@@ -215,6 +215,9 @@ def doctor(idx: Index, include_unused: bool = False) -> list[Finding]:
                  and on Linux/macOS, because the exported .pck is case-sensitive
     stale-uid    an ext_resource whose uid names a different file than its path (Godot follows the uid)
     unknown-uid  a uid:// reference no file in the project owns
+    duplicate-class  two scripts declare the same class_name; Godot keeps only one of them
+    orphan-file  a .import or .uid file whose source file is gone (left behind by a delete or rename
+                 outside the editor)
     unused       resources nothing references (info only, with --unused)
     """
     project = idx.project
@@ -271,6 +274,21 @@ def doctor(idx: Index, include_unused: bool = False) -> list[Finding]:
             for uid in UID_REF.findall(line_text):
                 if uid not in idx.uid_to_res and 'uid="' + uid not in line_text:
                     findings.append(Finding("unknown-uid", "error", src, n, f"{uid} belongs to no file"))
+
+    by_class: dict[str, list[str]] = defaultdict(list)
+    for res, name in idx.class_names().items():
+        by_class[name].append(res)
+    for name, scripts in sorted(by_class.items()):
+        if len(scripts) > 1:
+            for res in sorted(scripts):
+                others = ", ".join(s for s in sorted(scripts) if s != res)
+                findings.append(Finding("duplicate-class", "error", res, 1,
+                                        f"class_name {name} is also declared in {others}"))
+
+    for f in idx.files:
+        if f.suffix in (".import", ".uid") and to_res(project, f)[:-len(f.suffix)] not in files:
+            findings.append(Finding("orphan-file", "warning", to_res(project, f), 0,
+                                    f"{f.with_suffix('').name} is gone; delete this {f.suffix} file"))
 
     if include_unused:
         for res, note in idx.unused():

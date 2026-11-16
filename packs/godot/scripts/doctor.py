@@ -33,7 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from godot_common import SetupError, find_project, load_toolkit_config  # noqa: E402
 from godot_index import Index, doctor  # noqa: E402
 
-CHECKS = ["broken-path", "wrong-case", "stale-uid", "unknown-uid", "unused"]
+CHECKS = ["broken-path", "wrong-case", "stale-uid", "unknown-uid", "duplicate-class", "orphan-file", "unused"]
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -15,10 +15,12 @@ Exit codes: 0 all presets exported, 1 at least one preset failed, 2 bad setup (n
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import platform
 import re
 import shutil
+import subprocess
 import sys
 import time
 import zipfile
@@ -160,6 +162,51 @@ def zip_build(build_dir: Path, archive: Path, includes: list[Path]) -> Path:
     return archive
 
 
+def write_checksum(archive: Path) -> str:
+    """Write '<sha256>  <name>' to <archive>.sha256 (the format `sha256sum -c` reads) and return the hash."""
+    h = hashlib.sha256()
+    with archive.open("rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    digest = h.hexdigest()
+    archive.with_name(archive.name + ".sha256").write_text(f"{digest}  {archive.name}\n", encoding="utf-8")
+    return digest
+
+
+# ---------------------------------------------------------------- git tag
+
+def git(project: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", *args], cwd=project, capture_output=True, text=True, encoding="utf-8",
+                          errors="replace")
+
+
+def check_can_tag(project: Path, tag: str) -> None:
+    """Fail before exporting when the release could not be tagged cleanly."""
+    if git(project, "rev-parse", "--is-inside-work-tree").returncode != 0:
+        raise SetupError(f"--tag needs a git repository; {project} is not in one")
+    dirty = git(project, "status", "--porcelain", "--untracked-files=no").stdout.strip()
+    if dirty:
+        raise SetupError("--tag needs a clean working tree, so the tag matches the build. Commit or stash first:\n"
+                         + "\n".join("  " + line for line in dirty.splitlines()[:10]))
+    if git(project, "rev-parse", "-q", "--verify", f"refs/tags/{tag}").returncode == 0:
+        raise SetupError(f"tag {tag} already exists; bump the version or delete the tag first")
+
+
+def tag_release(project: Path, tag: str, version: str, version_changed: bool) -> str:
+    """Commit the version change (if any) and create an annotated tag. Never pushes."""
+    if version_changed:
+        git(project, "add", "project.godot")
+        r = git(project, "commit", "-m", f"Version {version}")
+        if r.returncode != 0:
+            return f"could not commit the version change: {(r.stderr or r.stdout).strip()}"
+    r = git(project, "tag", "-a", tag, "-m", f"Release {version}")
+    if r.returncode != 0:
+        return f"could not create tag {tag}: {(r.stderr or r.stdout).strip()}"
+    head = git(project, "rev-parse", "--short", "HEAD").stdout.strip()
+    return f"tagged {tag} at {head}" + (" (committed the version change)" if version_changed else "") + \
+        "; push it with: git push origin " + tag
+
+
 # ---------------------------------------------------------------- main
 
 def main(argv: list[str] | None = None) -> int:
@@ -177,6 +224,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-zip", action="store_true", help="skip zipping")
     ap.add_argument("--include", action="append", help="extra file for every zip (default: toolkit.json export.include)")
     ap.add_argument("--timeout", type=int, default=1800, help="seconds per preset before giving up (default 1800)")
+    ap.add_argument("--tag", action="store_true",
+                    help="after a successful export, commit the version change (with --bump/--set-version) and "
+                         "create git tag v<version>; needs a clean working tree; never pushes")
     args = ap.parse_args(argv)
 
     try:
@@ -212,6 +262,11 @@ def run(args: argparse.Namespace) -> int:
 
     info = read_project(project)
     version = info.version
+    next_version = args.set_version or (bump(version, args.bump) if args.bump else version)
+    if args.tag:
+        if not next_version:
+            raise SetupError("--tag needs a version: set config/version in project.godot or pass --set-version")
+        check_can_tag(project, f"v{next_version}")
     if args.bump or args.set_version:
         new = args.set_version or bump(version, args.bump)
         write_project_version(project, new)
@@ -242,11 +297,18 @@ def run(args: argparse.Namespace) -> int:
         results.append(r)
         status = "OK" if r.ok else "FAILED"
         print(f"[{preset.name}] {status} in {r.seconds:.1f}s" + (f"  ->  {r.archive or r.output}" if r.ok else ""))
+        if r.archive:
+            print(f"    sha256 {write_checksum(r.archive)}")
         if r.message:
             print("    " + r.message.replace("\n", "\n    "))
 
     failed = [r for r in results if not r.ok]
     print(f"\nDone in {time.monotonic() - total_start:.1f}s: {len(results) - len(failed)} ok, {len(failed)} failed.")
+    if args.tag:
+        if failed:
+            print("Not tagged, because a preset failed.")
+        else:
+            print(tag_release(project, f"v{version}", version, bool(args.bump or args.set_version)))
     return 1 if failed else 0
 
 

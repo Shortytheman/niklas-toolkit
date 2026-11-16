@@ -120,8 +120,9 @@ def run(args: argparse.Namespace, game_args: list[str]) -> int:
     if step_failed or missing:
         lines = out.text.splitlines()
         start = next((i for i, l in enumerate(lines) if "failed:" in l and "capture.gd" in l), None)
-        if start is not None:  # the failing step and the list of visible buttons that follows it
-            block = [lines[start]] + [l for l in lines[start + 1:start + 45]
+        if start is not None:  # why it failed, the failing step, and the list of visible buttons after it
+            why = [l for l in lines[max(0, start - 2):start] if l.startswith("capture.gd:") and "step" not in l]
+            block = why + [lines[start]] + [l for l in lines[start + 1:start + 45]
                                      if (l.startswith("  ") and not l.strip().startswith("at:"))
                                      or "visible buttons" in l]
             print("\n".join(block))

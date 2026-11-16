@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 (2026-11-16)
+
+- `export`: every zip gets a `.sha256` checksum file. `--tag` commits the version change and creates the git
+  tag `v<version>` after a successful export; it refuses on uncommitted changes or an existing tag and never
+  pushes.
+- `doctor`: new checks `duplicate-class` (two scripts with the same `class_name`) and `orphan-file` (`.import`
+  or `.uid` files whose source is gone).
+- `screenshot --steps`: `click:Container[N]` clicks the N-th visible button inside a container, for icon grids
+  and other buttons without text.
+
 ## 0.2.0 (2026-11-16)
 
 - `screenshot --steps`: drive the UI with real mouse and key events (`click`, `hover`, `key`, `wait`, `waitfor`,

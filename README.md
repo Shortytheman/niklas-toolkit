@@ -30,10 +30,10 @@ To try a pack from a local checkout without installing: `claude --plugin-dir ./p
 
 | Tool | Kind | What it does |
 | --- | --- | --- |
-| `export` | script + skill | Exports every preset headless, optionally bumps `config/version`, zips each build with extra files |
+| `export` | script + skill | Exports every preset headless, optionally bumps `config/version`, zips each build with extra files and a SHA-256 checksum, and with `--tag` tags the release in git |
 | `run` | script + skill | Runs the game headless (or loads the whole project with `--check`) and returns only errors and warnings, with `res://file.gd:line`, merged and counted |
 | `screenshot` | script + skill | Runs a scene with rendering and saves chosen frames as PNG, so Claude can look at its own visual work. `--steps "click:Settings; wait:30; shot:settings"` drives the UI with real input to reach screens behind menus |
-| `doctor` | script + skill | Finds broken `res://` paths, wrong letter case (fine on Windows, broken in exports), stale and unknown uids, and unused files, without running Godot |
+| `doctor` | script + skill | Finds broken `res://` paths, wrong letter case (fine on Windows, broken in exports), stale and unknown uids, duplicate `class_name`s, leftover `.import`/`.uid` files, and unused files, without running Godot |
 | `scene-rules` | skill | Rules for editing `.tscn` / `.tres` files as text, written for Godot 4.7 |
 | GDScript lint | hook | After every edit to a `.gd` file, reports the lint problems and syntax errors that edit introduced, compared with git HEAD |
 | `godot-index` | MCP server | Answers structural questions grep handles badly: a scene's node tree, every use of a resource (by `res://` path or `uid://`), where a symbol is defined, and which files nothing references |

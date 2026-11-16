@@ -63,3 +63,13 @@ def test_screenshot_failed_step_lists_buttons(project_copy, capsys):
     out = capsys.readouterr().out
     assert 'OpenButton "Open settings"' in out
     assert "shot_failed_step01.png" in out
+
+
+@pytest.mark.skipif(os.environ.get("CI") == "true", reason="needs a display to render")
+def test_screenshot_steps_nth_button(project_copy, capsys):
+    project = project_copy("ui_project")
+    assert screenshot.main([str(project), "--steps", "wait:5; click:Icons[2]; wait:3; shot:icon"]) == 0
+    assert "menu: icon 2 pressed" in (project / ".godot" / "toolkit" / "shots" / "capture.log").read_text(encoding="utf-8")
+    assert screenshot.main([str(project), "--steps", "wait:5; click:Icons[9]"]) == 1
+    out = capsys.readouterr().out
+    assert "Icons has 3 visible button(s), asked for number 9" in out

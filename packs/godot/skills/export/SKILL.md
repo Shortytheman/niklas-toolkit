@@ -18,6 +18,13 @@ Options:
   user asks for a new version. Bug fixes are `patch`, features `minor`.
 - `--set-version X.Y.Z` writes an exact version instead.
 - `--preset NAME` exports one preset (repeatable). `--debug` makes a debug build. `--no-zip` skips the zip.
+- `--tag` marks a release in git: after a successful export it commits the version change (with `--bump` or
+  `--set-version`) as "Version X.Y.Z" and creates the tag `vX.Y.Z`. It refuses to start when the working tree
+  has uncommitted changes or the tag exists, and it never pushes. Use it only when the user asks for a release
+  or a tag, not for test builds, and tell them the push command it prints.
+
+Every zip gets a `<zip>.sha256` file next to it (`sha256sum -c` can check it); mention the hash when the user
+shares the build.
 
 Defaults come from `toolkit.json` in the project root, when it exists:
 
