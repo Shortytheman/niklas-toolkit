@@ -262,3 +262,47 @@ def test_env_doctor_main_json(tmp_path, capsys):
     code = env_doctor.main([str(tmp_path), "--json"])
     data = json.loads(capsys.readouterr().out)
     assert code in (0, 1) and data["environment"][0].startswith("System:")
+
+
+def test_usage_report(tmp_path, monkeypatch, capsys):
+    import time
+    from datetime import datetime, timezone
+    import usage_report
+    claude = tmp_path / "claude"
+    proj = claude / "projects" / "C--work-game"
+    (proj / "s1" / "subagents").mkdir(parents=True)
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    def reply(mid, model="claude-opus-5-5", when=now, tool=None, **u):
+        usage = {"input_tokens": u.get("i", 0), "cache_creation_input_tokens": u.get("w", 0),
+                 "cache_read_input_tokens": u.get("r", 0), "output_tokens": u.get("o", 0)}
+        content = [{"type": "tool_use", "id": "t" + mid, "name": tool, "input": {}}] if tool else \
+            [{"type": "text", "text": "secret words"}]
+        return {"type": "assistant", "timestamp": when, "cwd": "C:/work/game", "sessionId": "s1",
+                "message": {"id": mid, "model": model, "usage": usage, "content": content}}
+
+    lines = [
+        {"type": "custom-title", "customTitle": "Build the menu", "sessionId": "s1"},
+        reply("m1", i=10, w=1000, r=0, o=50, tool="Bash"),
+        reply("m1", i=10, w=1000, r=0, o=50),                        # same response, second content block
+        reply("m2", i=5, w=100, r=5000, o=70, tool="Read"),
+        {"type": "system", "subtype": "compact_boundary"},
+        reply("m3", model="<synthetic>", o=999),
+        reply("m0", when="2020-01-01T00:00:00Z", o=12345),            # outside the period
+    ]
+    (proj / "s1.jsonl").write_text("\n".join(json.dumps(x) for x in lines) + "\nnot json\n", encoding="utf-8")
+    (proj / "s1" / "subagents" / "agent-1.jsonl").write_text(
+        json.dumps(reply("a1", model="claude-haiku-5-5", i=1, w=0, r=300, o=20, tool="Grep")), encoding="utf-8")
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(claude))
+
+    assert usage_report.main(["--json"]) == 0
+    r = json.loads(capsys.readouterr().out)
+    assert r["total"] == {"responses": 3, "input": 16, "cache_write": 1100, "cache_read": 5300, "output": 140,
+                          "total": 6556}
+    assert r["subagents"]["responses"] == 1 and r["by_model"]["claude-haiku-5-5"]["output"] == 20
+    s = r["sessions"][0]
+    assert (s["title"], s["project"], s["peak_context"], s["compactions"]) == ("Build the menu", "game", 5105, 1)
+    assert r["tools"] == {"Bash": 1, "Read": 1, "Grep": 1}
+    assert "secret words" not in json.dumps(r)
+    assert usage_report.main(["--project", "nothing-like-this"]) == 2
+    assert usage_report.main([]) == 0 and "Build the menu" in capsys.readouterr().out

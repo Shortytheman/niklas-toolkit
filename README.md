@@ -86,6 +86,7 @@ creates it): location, currency, watchlists, feeds, repos and keys.
 | `context_cost` | script + skill | Tokens that skills, agents, commands and CLAUDE.md files load into every session, per plugin; `--measure-mcp` starts each stdio MCP server and counts its tool definitions too |
 | `plugin_scan` | script + skill | Static risk scan of installed plugins, or a folder before you install it: download-and-run, obfuscated code, access to keys and browser data, destructive deletes, network hooks, skill text that steers Claude to hide things or skip permissions |
 | `skill_usage` | script + skill | Which skills and agents your local session logs show in use, and which never fire |
+| `usage_report` | script + skill | Where your tokens go: by day, project, model and session, cache share, subagent share, peak context and compactions per session, most-used tools. Reads token counts only, never message text |
 | `hook_doctor` | script + skill | Hooks that will fail: missing programs, the Windows `python3` Store placeholder, missing scripts, CRLF `.sh` files, bad matchers |
 | `env_doctor` | script + skill | Machine and project problems that break tools: missing Git Bash, Store or pyenv Python, CRLF shell scripts and missing `eol=lf` rules, `npx` MCP servers without `cmd /c`, PowerShell execution policy, long paths, dead and duplicate PATH entries |
 

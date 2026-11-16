@@ -1,6 +1,6 @@
 ---
 name: audit
-description: Audit the Claude Code setup - context tokens per installed skill, agent, CLAUDE.md and MCP server, skills that never fire, failing hooks, machine setup problems (Git Bash, Python, CRLF, npx MCP servers on Windows, PATH), and risky code in plugins. Use when context fills up, to see what plugins cost or which skills are used, to clean up, when a hook, script or MCP server fails to start, or before trusting a plugin.
+description: Audit the Claude Code setup - context tokens per installed skill, agent, CLAUDE.md and MCP server, token usage by day, project, model and session, skills that never fire, failing hooks, machine setup problems (Git Bash, Python, CRLF, npx MCP servers on Windows, PATH), and risky code in plugins. Use when context fills up, to see where tokens or usage limits go, what plugins cost or which skills are used, to clean up, when a hook, script or MCP server fails to start, or before trusting a plugin.
 ---
 
 # Audit the Claude Code setup
@@ -11,6 +11,7 @@ nothing anywhere.
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/context_cost.py" "<project>"   # tokens per plugin, largest items
 python "${CLAUDE_PLUGIN_ROOT}/scripts/skill_usage.py" "<project>" --days 30   # used vs never used
+python "${CLAUDE_PLUGIN_ROOT}/scripts/usage_report.py" --days 30              # tokens by day, project, model
 python "${CLAUDE_PLUGIN_ROOT}/scripts/hook_doctor.py" "<project>"    # hooks that will fail, and why
 python "${CLAUDE_PLUGIN_ROOT}/scripts/env_doctor.py" "<project>"     # machine setup: Git Bash, Python, CRLF, PATH
 python "${CLAUDE_PLUGIN_ROOT}/scripts/plugin_scan.py" "<project>"    # risky patterns in installed plugins
@@ -26,6 +27,10 @@ definitions. That runs the servers' programs: ask the user first, unless they as
   commands, and every applicable CLAUDE.md in full); "on use" is what a skill adds when it runs. MCP servers are
   listed but not measured: their tool definitions load at start too. Numbers are estimates (~4 characters per
   token).
+- **usage_report** reads only token counts, models, timestamps, folders, session titles and tool names, never
+  message text. A high cache-read share is good (cached input is cheap). Sessions with a peak context near the
+  model's window, or several compactions, are the ones to split up or start fresh with a handoff. Large
+  subagent shares mean delegated work: worth it for wide searches, wasteful for small tasks.
 - **skill_usage** counts Skill calls, subagent launches and slash commands in the local session logs. It reads
   names only. A skill that is rarely used can still be worth keeping; present the list, do not judge it.
 - **hook_doctor** names the hook, where it is configured, and the fix. `store-python` means `python3` opens the
