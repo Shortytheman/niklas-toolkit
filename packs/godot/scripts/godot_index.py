@@ -87,8 +87,8 @@ class Index:
 
     def _read_refs(self) -> None:
         for f in self.files:
-            if f.suffix not in TEXT_EXTS or f.suffix == ".import":
-                continue
+            if f.suffix not in TEXT_EXTS or f.suffix == ".import" or f.name == "toolkit.json":
+                continue  # toolkit.json is the toolkit's own settings, not game data
             src = to_res(self.project, f)
             try:
                 text = self.text(f) if f.suffix in (".gd", ".tscn", ".tres") else \

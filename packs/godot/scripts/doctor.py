@@ -46,8 +46,13 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         project = find_project(args.project)
+        patterns = load_toolkit_config(project).get("doctor", {}).get("ignore", [])
+        ignore = [re.compile(p) for p in patterns]
     except SetupError as e:
         print(f"ERROR: {e}", file=sys.stderr)
+        return 2
+    except re.error as e:
+        print(f"ERROR: bad pattern in toolkit.json doctor.ignore: {e}", file=sys.stderr)
         return 2
 
     start = time.monotonic()
@@ -55,8 +60,7 @@ def main(argv: list[str] | None = None) -> int:
     findings = doctor(idx, include_unused=args.unused or (args.only is not None and "unused" in args.only))
     if args.only:
         findings = [f for f in findings if f.check in args.only]
-    ignore = [re.compile(p) for p in load_toolkit_config(project).get("doctor", {}).get("ignore", [])]
-    ignored = [f for f in findings if any(r.search(f"{f.file} {f.message}") for r in ignore)]
+    ignored =[f for f in findings if any(r.search(f"{f.file} {f.message}") for r in ignore)]
     findings = [f for f in findings if f not in ignored]
 
     counts = Counter(f.severity for f in findings)

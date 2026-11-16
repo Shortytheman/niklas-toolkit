@@ -74,3 +74,19 @@ def test_cli_exit_codes_and_ignore(tmp_path, capsys):
 def test_cli_clean_project(project_copy, capsys):
     assert doctor_cli.main([str(project_copy("mini_project"))]) == 0
     assert "0 error(s), 0 warning(s)" in capsys.readouterr().out
+
+
+def test_cli_bad_config_is_setup_error(tmp_path, capsys):
+    project = make_project(tmp_path)
+    (project / "toolkit.json").write_text(r'{"doctor": {"ignore": ["a\.b"]}}', encoding="utf-8")  # bad JSON escape
+    assert doctor_cli.main([str(project)]) == 2
+    (project / "toolkit.json").write_text(json.dumps({"doctor": {"ignore": ["("]}}), encoding="utf-8")
+    assert doctor_cli.main([str(project)]) == 2
+    assert "bad pattern" in capsys.readouterr().err
+
+
+def test_toolkit_json_is_not_scanned(tmp_path):
+    project = make_project(tmp_path)
+    (project / "toolkit.json").write_text(json.dumps({"doctor": {"ignore": ["res://nowhere/x.png"]}}),
+                                          encoding="utf-8")
+    assert "res://nowhere/x.png" not in Index.build(project).refs
