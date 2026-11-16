@@ -1,6 +1,6 @@
 ---
 name: export
-description: Export a Godot 4 game to playable builds (exe/pck zipped for release), optionally bumping the version first. Use when the user asks to export, build, package, or release the game, or to make a new version or zip of it.
+description: Export a Godot 4 game to playable builds (exe/pck zipped for release), optionally bumping the version first, and show what makes a build big. Use when the user asks to export, build, package, or release the game, to make a new version or zip of it, or why the build is large or grew.
 ---
 
 # Export a Godot project
@@ -48,6 +48,20 @@ The script prints one line per preset and ends with `Done in Ns: X ok, Y failed`
   - Export template missing: tell the user to install it in the editor (Editor > Manage Export Templates).
     Do not download templates yourself.
   - Unknown preset: the message lists the presets that exist.
+
+## What is in the build, and why it is big
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/pck_size.py" "<project folder>"                 # the newest build
+python "${CLAUDE_PLUGIN_ROOT}/scripts/pck_size.py" "<new build>" --compare "<old build>"   # what grew
+```
+
+It reads the pack's file table (from a `.pck`, an executable with the pack embedded, or a build zip) without
+Godot and lists sizes by source folder (`--depth 3` for more detail), by kind and the largest files, named by
+their source path. Use it after an export when the user asks about size, or before a release to compare with the
+last one. Point out files that look unintended in a release (test folders, `_old`/`_new` copies, raw sheets);
+excluding them is an `exclude_filter` in the preset or a `.gdignore`, which the user decides. Do not reimport
+textures with other compression settings unless the user asks: it changes how the game looks.
 
 ## After a version bump
 
