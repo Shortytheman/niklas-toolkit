@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0 (2026-11-16)
+
+- **brief/dmi**: what the nearest DMI station measured in the last hour (temperature, humidity, wind and gusts,
+  rain, pressure, visibility, cloud cover), no key needed. Prefers a full station with wind and rain when one is
+  close, and says so when a place is outside Denmark. An optional `observed` section for the brief.
+
 ## 0.7.0 (2026-11-16)
 
 - **deps/fix_deps**: also fixes projects that use a lockfile with a manifest: raises the lower bound in
