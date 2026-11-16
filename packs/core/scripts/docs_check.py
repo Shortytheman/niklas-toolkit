@@ -122,6 +122,25 @@ def exists_exact(path: Path) -> bool:
     return True
 
 
+def case_variant(path: Path) -> Path | None:
+    """The existing path that matches `path` when letter case is ignored, or None. Works the same on
+    case-sensitive (Linux) and case-insensitive (Windows, macOS) file systems."""
+    current = Path(path.anchor) if path.is_absolute() else Path(".")
+    for part in path.parts[1:] if path.is_absolute() else path.parts:
+        if part in (".", ".."):
+            current = current / part
+            continue
+        try:
+            names = os.listdir(current)
+        except OSError:
+            return None
+        match = next((n for n in names if n == part), None) or next((n for n in names if n.lower() == part.lower()), None)
+        if match is None:
+            return None
+        current = current / match
+    return current
+
+
 def find_docs(root: Path) -> list[Path]:
     """Markdown files git tracks or would track (ignored files skipped); a plain folder walk outside git."""
     import subprocess
@@ -176,7 +195,8 @@ def check_target(t: str, doc: Path, rel: str, n: int, root: Path, cache: dict, e
     if path_part:
         target = (root / path_part.lstrip("/")) if path_part.startswith("/") else (doc.parent / path_part)
         if not exists_exact(target):
-            hint = " (exists with different letter case)" if target.exists() else ""
+            variant = case_variant(target)
+            hint = f" (exists with different letter case: {variant.name})" if variant else ""
             return [Problem("missing-file", rel, n, t, f"{path_part} does not exist{hint}")]
     else:
         target = doc

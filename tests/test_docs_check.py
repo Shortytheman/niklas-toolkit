@@ -57,7 +57,7 @@ def test_finds_the_broken_ones(docs, capsys):
 
 def test_case_hint(docs, capsys):
     docs_check.main([str(docs)])
-    assert "docs/guide.md does not exist (exists with different letter case)" in capsys.readouterr().out
+    assert "docs/guide.md does not exist (exists with different letter case: Guide.md)" in capsys.readouterr().out
 
 
 def test_git_ignored_docs_are_skipped(docs, capsys):
