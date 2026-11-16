@@ -33,8 +33,9 @@ To try a pack from a local checkout without installing: `claude --plugin-dir ./p
 | `export` | script + skill | Exports every preset headless, optionally bumps `config/version`, zips each build with extra files |
 | `run` | script + skill | Runs the game headless (or loads the whole project with `--check`) and returns only errors and warnings, with `res://file.gd:line`, merged and counted |
 | `screenshot` | script + skill | Runs a scene with rendering and saves chosen frames as PNG, so Claude can look at its own visual work |
+| `doctor` | script + skill | Finds broken `res://` paths, wrong letter case (fine on Windows, broken in exports), stale and unknown uids, and unused files, without running Godot |
+| `scene-rules` | skill | Rules for editing `.tscn` / `.tres` files as text, written for Godot 4.7 |
 | GDScript lint | hook | After every edit to a `.gd` file, reports the lint problems and syntax errors that edit introduced, compared with git HEAD |
-
 | `godot-index` | MCP server | Answers structural questions grep handles badly: a scene's node tree, every use of a resource (by `res://` path or `uid://`), where a symbol is defined, and which files nothing references |
 
 `godot-index` is written against the MCP protocol directly in standard-library Python (JSON-RPC over stdio), so
@@ -47,7 +48,10 @@ never read or overwrite your real save files.
 
 | Tool | Kind | What it does |
 | --- | --- | --- |
+| `verify` | script + skill | Runs the project's checks (from `toolkit.json`, or detected: npm, pytest, cargo, go, make) with one `PASS`/`FAIL` line each |
 | `learn` | skill | Turns a repeated correction into a permanent rule in the right place (project `CLAUDE.md`, global, a skill, or this toolkit) |
+| `handoff` | skill | Saves the state of unfinished work to `.claude/handoff.md` and resumes from it in the next session |
+| `reviewer` | agent | Reviews a finished diff in a fresh context for bugs, missed callers and broken project rules, and confirms each finding before reporting it |
 
 ## Scripts without Claude
 
@@ -56,7 +60,9 @@ python packs/godot/scripts/export.py <project> --bump patch
 python packs/godot/scripts/run_report.py <project> --check
 python packs/godot/scripts/run_report.py <project> --frames 600 -- --some-game-arg
 python packs/godot/scripts/screenshot.py <project> --scene res://ui/menu.tscn --frames 30,120
-python packs/godot/servers/godot_index/godot_index.py <project> usages res://art/icon.png
+python packs/godot/scripts/doctor.py <project> --unused
+python packs/godot/scripts/godot_index.py <project> usages res://art/icon.png
+python packs/core/scripts/verify.py <project>
 ```
 
 Exit codes are the same everywhere: `0` ok, `1` the project has problems, `2` setup problem (no Godot, no project).
@@ -70,7 +76,9 @@ Optional, in the Godot project root:
   "godot": "C:/Tools/Godot",
   "export": {"presets": ["windows"], "include": ["docs/HOW TO PLAY.txt"]},
   "run": {"ignore": ["ObjectDB instances were leaked"]},
-  "gdscript": {"format": false, "lint": true, "disable": ["max-line-length"]}
+  "gdscript": {"format": false, "lint": true, "disable": ["max-line-length"]},
+  "doctor": {"ignore": ["res://assets/sfx/"]},
+  "verify": [{"name": "tests", "run": "python -m pytest -q", "timeout": 900}]
 }
 ```
 
@@ -82,6 +90,8 @@ Optional, in the Godot project root:
 | `run.ignore` | Regular expressions for expected messages to leave out of reports |
 | `gdscript.format` | Run `gdformat` after each edit. Only for code that is already gdformat-clean. |
 | `gdscript.disable` | gdlint rules the hook should not report |
+| `doctor.ignore` | Regular expressions for known doctor findings, matched against the file and message |
+| `verify` | Checks for `verify.py`: `name`, `run` (a shell command), optional `timeout` in seconds and `cwd` |
 
 The lint hook needs gdtoolkit: `python -m pip install "gdtoolkit==4.*"`.
 

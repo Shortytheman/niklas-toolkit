@@ -7,7 +7,7 @@ import pytest
 from conftest import ROOT
 
 SERVER_DIR = ROOT / "packs" / "godot" / "servers" / "godot_index"
-sys.path.insert(0, str(SERVER_DIR))
+sys.path.insert(0, str(ROOT / "packs" / "godot" / "scripts"))
 
 from godot_index import Index, parse_scene, scene_tree  # noqa: E402
 

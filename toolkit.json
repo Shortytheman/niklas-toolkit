@@ -1,0 +1,8 @@
+{
+  "verify": [
+    {"name": "tests", "run": "python -m pytest -q tests", "timeout": 900},
+    {"name": "validate marketplace", "run": "claude plugin validate --strict ."},
+    {"name": "validate core", "run": "claude plugin validate --strict packs/core"},
+    {"name": "validate godot", "run": "claude plugin validate --strict packs/godot"}
+  ]
+}

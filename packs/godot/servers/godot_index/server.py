@@ -20,7 +20,7 @@ import sys
 import traceback
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from godot_index import Index, scene_tree  # noqa: E402
 
 SERVER_INFO = {"name": "godot-index", "version": "0.1.0"}

@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 import re
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -25,10 +25,14 @@ SKIP_DIRS = {".godot", ".git", ".import", "__pycache__", "node_modules"}
 
 RES_PATH = re.compile(r"res://[^\"'\s)\]}>,;]+")
 UID_REF = re.compile(r"uid://[a-z0-9]+")
+WORD = re.compile(r"\b\w+\b")
 DYNAMIC_PREFIX = re.compile(r"[\"'](res://[^\"'%{}]*?/)(?:[^\"'/]*%[sd]|[^\"'/]*\{)|[\"'](res://[^\"']*/)[\"']\s*\+")
 
 
 def to_res(project: Path, path: Path) -> str:
+    s, p = str(path), str(project)
+    if s.startswith(p) and s[len(p):len(p) + 1] in ("\\", "/"):  # fast path: plain string work, no pathlib
+        return "res://" + s[len(p) + 1:].replace("\\", "/")
     return "res://" + path.relative_to(project).as_posix()
 
 
@@ -43,6 +47,12 @@ class Index:
     uid_to_res: dict[str, str] = field(default_factory=dict)
     refs: dict[str, list[tuple[str, int]]] = field(default_factory=lambda: defaultdict(list))  # target -> (file, line)
     dynamic_prefixes: set[str] = field(default_factory=set)
+    texts: dict[Path, str] = field(default_factory=dict)      # .gd/.tscn/.tres contents, read once
+
+    def text(self, f: Path) -> str:
+        if f not in self.texts:
+            self.texts[f] = f.read_text(encoding="utf-8", errors="replace")
+        return self.texts[f]
 
     @classmethod
     def build(cls, project: Path) -> "Index":
@@ -81,9 +91,11 @@ class Index:
                 continue
             src = to_res(self.project, f)
             try:
-                lines = f.read_text(encoding="utf-8", errors="replace").splitlines()
+                text = self.text(f) if f.suffix in (".gd", ".tscn", ".tres") else \
+                    f.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
+            lines = text.splitlines()
             for n, line in enumerate(lines, 1):
                 targets = set(RES_PATH.findall(line))
                 targets.update(self.uid_to_res[u] for u in UID_REF.findall(line) if u in self.uid_to_res)
@@ -143,10 +155,10 @@ class Index:
             name = class_names.get(res)
             if name:  # a script with class_name is used by its name, not its path
                 if code is None:
-                    code = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in self.files
-                                     if p.suffix in (".gd", ".tscn", ".tres") and p != f)
-                if name not in word_cache:
-                    word_cache[name] = re.search(rf"\b{re.escape(name)}\b", code) is not None
+                    code = Counter(WORD.findall("\n".join(
+                        self.text(p) for p in self.files if p.suffix in (".gd", ".tscn", ".tres"))))
+                if name not in word_cache:  # used if the name appears anywhere besides its own file
+                    word_cache[name] = code[name] > WORD.findall(self.text(f)).count(name)
                 if word_cache[name]:
                     continue
             dyn = next((p for p in sorted(self.dynamic_prefixes) if res.startswith(p)), None)
@@ -171,6 +183,97 @@ class Index:
                 if re.match(rf"^{re.escape(name)}=\"\*?res://", line):
                     hits.append(("res://project.godot", n, f"autoload {line.strip()}"))
         return hits
+
+
+# ---------------------------------------------------------------- doctor
+
+@dataclass
+class Finding:
+    check: str     # broken-path, wrong-case, stale-uid, unknown-uid, unused
+    severity: str  # error | warning | info
+    file: str      # where the reference is (or the unused file itself)
+    line: int
+    message: str
+
+
+EXT_RESOURCE = re.compile(r'^\[ext_resource\b[^\]]*?\]', re.M)
+
+
+def _is_concrete(ref: str) -> bool:
+    """A literal path, not a prefix for building one ("res://icons/" + name, "res://x/%s.png")."""
+    return len(ref) > len("res://") and not ref.endswith("/") and not any(c in ref for c in "%{}$*")
+
+
+def doctor(idx: Index, include_unused: bool = False) -> list[Finding]:
+    """Problems that break at runtime or only after export, found without running Godot.
+
+    broken-path  a res:// path that points at nothing
+    wrong-case   a path whose letter case differs from the file on disk: works on Windows, breaks in exports
+                 and on Linux/macOS, because the exported .pck is case-sensitive
+    stale-uid    an ext_resource whose uid names a different file than its path (Godot follows the uid)
+    unknown-uid  a uid:// reference no file in the project owns
+    unused       resources nothing references (info only, with --unused)
+    """
+    project = idx.project
+    files = {to_res(project, f) for f in idx.files}
+    actual = set(files)
+    for res in files:  # folders too, so "res://dir" counts as existing
+        while (cut := res.rfind("/")) > len("res://"):
+            res = res[:cut]
+            if res in actual:
+                break
+            actual.add(res)
+    lower = {}
+    for a in actual:
+        lower.setdefault(a.lower(), a)
+
+    findings: list[Finding] = []
+    for target, places in sorted(idx.refs.items()):
+        if not _is_concrete(target) or target in actual or target.startswith("res://.godot/"):
+            continue
+        real = lower.get(target.lower())
+        for src, line in places:
+            if real:
+                findings.append(Finding("wrong-case", "error", src, line,
+                                        f"{target} differs in case from the file {real}; exports will not find it"))
+            else:
+                findings.append(Finding("broken-path", "error", src, line, f"{target} does not exist"))
+
+    for f in idx.files:
+        if f.suffix not in (".tscn", ".tres", ".gd"):
+            continue
+        src = to_res(project, f)
+        text = idx.text(f)
+        if f.suffix != ".gd":
+            for m in EXT_RESOURCE.finditer(text):
+                uid = re.search(r'\buid="(uid://[a-z0-9]+)"', m.group(0))
+                path = re.search(r'\bpath="([^"]+)"', m.group(0))
+                line = text.count("\n", 0, m.start()) + 1
+                if not uid:
+                    continue
+                owner = idx.uid_to_res.get(uid.group(1))
+                if owner is None:
+                    if path and path.group(1) not in actual:
+                        continue  # already reported as broken-path
+                    findings.append(Finding("unknown-uid", "warning", src, line,
+                                            f"{uid.group(1)} belongs to no file; Godot falls back to "
+                                            f"{path.group(1) if path else 'nothing'}"))
+                elif path and owner != path.group(1) and path.group(1) in actual:
+                    findings.append(Finding("stale-uid", "warning", src, line,
+                                            f"uid {uid.group(1)} is {owner}, but the path says {path.group(1)}; "
+                                            f"Godot loads {owner}"))
+        for n, line_text in enumerate(text.splitlines(), 1):
+            if line_text.lstrip().startswith(("#", ";")) or (f.suffix != ".gd" and line_text.startswith("[gd_")):
+                continue
+            for uid in UID_REF.findall(line_text):
+                if uid not in idx.uid_to_res and 'uid="' + uid not in line_text:
+                    findings.append(Finding("unknown-uid", "error", src, n, f"{uid} belongs to no file"))
+
+    if include_unused:
+        for res, note in idx.unused():
+            if not note:
+                findings.append(Finding("unused", "info", res, 0, "nothing references this file"))
+    return findings
 
 
 # ---------------------------------------------------------------- scene tree
