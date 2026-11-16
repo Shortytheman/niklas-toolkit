@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 (2026-11-16)
+
+- **core/release**: drafts the changelog from the commits since the last tag (conventional commits or plain
+  subjects), suggests the next semver version, and with `--write` adds it to `CHANGELOG.md`. This entry was
+  drafted with it.
+- **core/docs-check**: the "exists with different letter case" hint now also works on case-sensitive file
+  systems (Linux CI), naming the file's real spelling.
+
 ## 0.5.0 (2026-11-16)
 
 - **core/docs-check**: broken relative links (with exact letter case), missing anchors (GitHub slugs), script

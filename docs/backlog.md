@@ -8,10 +8,10 @@ Ideas and fixes waiting for real use to justify them. The `learn` skill adds lin
   November 2026 change first.
 - `brief`: FRED economic series (needs a free key and its "not endorsed" notice).
 - `deps`: `fix_deps` for `pyproject.toml` ranges and Cargo.toml.
-- `release`: changelog from commits and a semver bump, as a core skill.
 
 ## Done
 
+- `release` skill (0.6.0)
 - `docs-check`, `fix_deps`, `plugin_scan`, MCP measurement, `dk_stats` (0.5.0)
 - `deps`, `brief` and `audit` packs, shared HTTP layer, Windows CI (0.4.0)
 - `export` checksums and `--tag`, doctor `duplicate-class` and `orphan-file`, `screenshot` `Container[N]` (0.3.0)

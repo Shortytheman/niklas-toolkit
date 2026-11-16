@@ -37,6 +37,7 @@ much). To try a pack from a local checkout: `claude --plugin-dir ./packs/deps`.
 | `verify` | script + skill | Runs the project's checks (from `toolkit.json`, or detected: npm, pytest, cargo, go, make) with one `PASS`/`FAIL` line each |
 | `learn` | skill | Turns a repeated correction into a permanent rule in the right place (project `CLAUDE.md`, global, a skill, or this toolkit) |
 | `handoff` | skill | Saves the state of unfinished work to `.claude/handoff.md` and resumes from it in the next session |
+| `release` | script + skill | Drafts the changelog from commits since the last tag, suggests the next semver version, and walks through bump, commit and tag |
 | `docs-check` | script + skill | Broken relative links (letter case included), missing `#anchors`, script paths in code blocks that no longer exist, and with `--external` dead web links |
 | `reviewer` | agent | Reviews a finished diff in a fresh context for bugs, missed callers and broken project rules, and confirms each finding before reporting it |
 
