@@ -7,3 +7,7 @@ tests/fixtures/*/.godot/
 
 # Private planning notes, kept local
 docs/plan.md
+
+# Research notes and reports, kept local
+research_notes/
+reports/
