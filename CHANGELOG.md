@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0 (2026-11-16)
+
+- **brief --save** writes a dated copy of the brief to the toolkit folder, and **schedule_brief.py** shows the
+  command for a daily Windows scheduled task (or a crontab line on Linux and macOS) that runs it, so the brief is
+  ready in the morning without opening Claude. The task is only created with `--create`, and `--remove` deletes
+  it.
+
 ## 0.10.0 (2026-11-16)
 
 - **brief/fred**: economic series from FRED (interest rates, inflation, jobs) with your own free key, series

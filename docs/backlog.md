@@ -7,6 +7,7 @@ Ideas and fixes waiting for real use to justify them. The `learn` skill adds lin
 
 ## Done
 
+- Daily brief: `--save` and `schedule_brief.py` (0.11.0)
 - FRED economic series (0.10.0)
 - DMI HARMONIE forecasts (0.9.0)
 - DMI observations in `brief` (0.8.0)
