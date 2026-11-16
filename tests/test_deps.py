@@ -335,3 +335,20 @@ def test_fix_deps_uv_project(osv_net, tmp_path, capsys):
     out = capsys.readouterr().out
     assert "in pyproject.toml" in out and "then: uv lock --upgrade-package requests" in out
     assert '"requests>=2.32.0"' in (proj / "pyproject.toml").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("name,content,pkg,new", [
+    ("requirements.txt", "requests==2.25.0\r\nother==1.0\r\n", "requests", "2.32.0"),
+    ("package.json", '{\r\n  "dependencies": {\r\n    "lodash": "^4.17.15"\r\n  }\r\n}\r\n', "lodash", "4.18.0"),
+    ("pyproject.toml", '[project]\r\ndependencies = [\r\n  "requests>=2.0",\r\n]\r\n', "requests", "2.32.0"),
+    ("Cargo.toml", '[dependencies]\r\nserde = "1.0.100"\r\nlog = "0.4"\r\n', "serde", "1.0.180"),
+])
+def test_editors_keep_crlf_line_endings(tmp_path, name, content, pkg, new):
+    import fix_deps
+    path = tmp_path / name
+    path.write_bytes(content.encode())
+    editor = fix_deps.edit_requirements if name.endswith(".txt") else fix_deps.EDITORS[name]
+    assert editor(path, pkg, new)
+    raw = path.read_bytes()
+    assert new.encode() in raw
+    assert raw.count(b"\r\n") == content.count("\r\n") and b"\n" not in raw.replace(b"\r\n", b"")

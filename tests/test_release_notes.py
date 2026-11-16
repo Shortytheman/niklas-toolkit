@@ -65,3 +65,11 @@ def test_nothing_new_and_not_git(repo, tmp_path_factory, capsys):
     assert release_notes.main([str(repo)]) == 1
     outside = tmp_path_factory.mktemp("not-git")  # a separate folder: tmp_path itself is the repo
     assert release_notes.main([str(outside)]) == 2
+
+
+def test_write_keeps_crlf(repo):
+    commit(repo, "feat: thing")
+    (repo / "CHANGELOG.md").write_bytes(b"# Changelog\r\n\r\n## 1.2.3\r\n\r\n- old\r\n")
+    assert release_notes.main([str(repo), "--write"]) == 0
+    raw = (repo / "CHANGELOG.md").read_bytes()
+    assert b"## 1.3.0" in raw and b"\n" not in raw.replace(b"\r\n", b"")

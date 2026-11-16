@@ -108,13 +108,18 @@ def render(version: str, groups: dict[str, list]) -> str:
 
 
 def write_changelog(path: Path, section: str) -> None:
+    """Insert the section above the newest one, keeping the file's line endings (CRLF stays CRLF)."""
+    newline = "\n"
     if path.is_file():
-        text = path.read_text(encoding="utf-8")
+        with path.open(encoding="utf-8", newline="") as f:
+            raw = f.read()
+        newline = "\r\n" if "\r\n" in raw else "\n"
+        text = raw.replace("\r\n", "\n")
         m = re.search(r"^## ", text, re.MULTILINE)
         text = text[:m.start()] + section + "\n" + text[m.start():] if m else text.rstrip() + "\n\n" + section
     else:
         text = "# Changelog\n\n" + section
-    path.write_text(text, encoding="utf-8", newline="\n")
+    path.write_bytes(text.replace("\n", newline).encode("utf-8"))
 
 
 def main(argv: list[str] | None = None) -> int:

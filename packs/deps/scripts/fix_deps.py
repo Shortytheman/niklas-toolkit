@@ -58,8 +58,15 @@ class Plan:
     detail: str = ""
 
 
+def read_raw(path: Path) -> str:
+    """The file's text with its line endings untouched (read_text() would turn CRLF into LF, and writing that back
+    would show every line of a Windows file as changed)."""
+    with path.open(encoding="utf-8", newline="") as f:
+        return f.read()
+
+
 def edit_requirements(path: Path, name: str, new: str) -> bool:
-    text = path.read_text(encoding="utf-8")
+    text = read_raw(path)
     pattern = re.compile(r"^(\s*)([A-Za-z0-9][A-Za-z0-9._-]*)(\[[^\]]*\])?(\s*===?\s*)([^\s;#\\]+)", re.MULTILINE)
     changed = False
 
@@ -77,7 +84,7 @@ def edit_requirements(path: Path, name: str, new: str) -> bool:
 
 def edit_package_json(path: Path, name: str, new: str) -> bool:
     """Change the spec in place in the text (keeps formatting and key order); keep ^ ~ >= operators."""
-    text = path.read_text(encoding="utf-8")
+    text = read_raw(path)
     data = json.loads(text)
     changed = False
     for section in ("dependencies", "devDependencies", "optionalDependencies"):
@@ -150,7 +157,7 @@ def _rewrite_spec(spec: str, new: str) -> str | None:
 
 def edit_pyproject(path: Path, name: str, new: str) -> bool:
     """Raise the lower bound of `name` in PEP 508 strings ("requests>=2.25") and Poetry tables (requests = "^2.25")."""
-    text = path.read_text(encoding="utf-8")
+    text = read_raw(path)
     changed = False
 
     def pep508(m: re.Match) -> str:
@@ -185,7 +192,7 @@ def edit_pyproject(path: Path, name: str, new: str) -> bool:
 
 def edit_cargo_toml(path: Path, name: str, new: str) -> bool:
     """Set the version requirement of `name` (keeps ^ ~ = operators): serde = "1.0" / serde = { version = "1.0" }."""
-    text = path.read_text(encoding="utf-8")
+    text = read_raw(path)
     pattern = re.compile(r'^(' + re.escape(name) + r'\s*=\s*(?:\{[^}\n]*version\s*=\s*)?")([\^~=]|>=)?[^"]*(")',
                          re.MULTILINE)
     new_text, n = pattern.subn(lambda m: f"{m.group(1)}{m.group(2) or ''}{new}{m.group(3)}", text)
