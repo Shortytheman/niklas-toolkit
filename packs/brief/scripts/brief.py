@@ -6,7 +6,8 @@ new releases, from the user's config. Each section fails on its own: one dead so
     python brief.py --only weather news   just these
 
 config.json "brief": {"sections": [...]} sets the default order. Sections:
-    weather, holidays, fx, crypto, stocks, portfolio, news, releases, inflation (Danish CPI)
+    weather, holidays, fx, crypto, stocks, portfolio, news, releases,
+    observed (measured now at the nearest DMI station), inflation (Danish CPI)
 A section with nothing configured (no watchlist, no feeds) is skipped quietly.
 
 Exit codes: 0 brief printed (even if some sections failed), 2 setup problem in the config file itself.
@@ -120,6 +121,11 @@ def section_releases(cfg: dict) -> list[str]:
     return ["New releases (7 days):"] + [f"  {r['repo']} {r['title']}  {news.ago(r['date'])}" for r in found]
 
 
+def section_observed(cfg: dict) -> list[str]:
+    import dmi
+    return dmi.summary() + [f"  ({dmi.ATTRIBUTION})"]
+
+
 def section_inflation(cfg: dict) -> list[str]:
     import dk_stats
     table, sel, _, _ = dk_stats.PRESETS["inflation"]
@@ -132,7 +138,7 @@ def section_inflation(cfg: dict) -> list[str]:
             f"({dk_stats.ATTRIBUTION.replace('Source: ', '')})"]
 
 
-SECTIONS = {"weather": section_weather, "inflation": section_inflation, "holidays": section_holidays, "fx": section_fx, "crypto": section_crypto,
+SECTIONS = {"weather": section_weather, "observed": section_observed, "inflation": section_inflation, "holidays": section_holidays, "fx": section_fx, "crypto": section_crypto,
             "stocks": section_stocks, "portfolio": section_portfolio, "news": section_news,
             "releases": section_releases}
 

@@ -261,3 +261,43 @@ def test_brief_inflation_section(statbank, tmp_path, capsys, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["brief.py", "--only", "inflation"])
     assert brief.main() == 0
     assert "Danish inflation: 2.2% in 2026M10" in capsys.readouterr().out
+
+
+DMI_STATIONS = {"features": [
+    {"geometry": {"coordinates": [12.5683, 55.6800]}, "properties": {"stationId": "06186", "name": "Near", "validTo": None,
+                                                                    "parameterId": ["temp_dry", "humidity"]}},
+    {"geometry": {"coordinates": [12.6454, 55.6140]}, "properties": {"stationId": "06180", "name": "Airport", "validTo": None,
+                                                                    "parameterId": ["temp_dry", "wind_speed", "precip_past1h"]}},
+    {"geometry": {"coordinates": [12.6454, 55.6140]}, "properties": {"stationId": "06180", "name": "Old", "validTo": "2020-01-01",
+                                                                    "parameterId": ["temp_dry"]}},
+    {"geometry": {"coordinates": [9.0, 56.0]}, "properties": {"stationId": "06060", "name": "Far full", "validTo": None,
+                                                             "parameterId": ["temp_dry", "wind_speed", "precip_past1h"]}},
+]}
+DMI_OBS = {"features": [
+    {"properties": {"parameterId": "temp_dry", "value": 9.43, "observed": "2026-11-16T14:00:00Z"}},
+    {"properties": {"parameterId": "temp_dry", "value": 9.38, "observed": "2026-11-16T14:10:00Z"}},
+    {"properties": {"parameterId": "wind_speed", "value": 4.06, "observed": "2026-11-16T14:10:00Z"}},
+    {"properties": {"parameterId": "humidity", "value": 95.6, "observed": "2026-11-16T14:10:00Z"}},
+]}
+
+
+def test_dmi_prefers_full_station_and_newest_values(net, tmp_path):
+    import dmi
+    write_config(tmp_path, {"location": {"name": "Home", "lat": 55.6761, "lon": 12.5683}})
+    net.add("opendataapi.dmi.dk/v2/metObs/collections/station/items", DMI_STATIONS)
+    net.add("opendataapi.dmi.dk/v2/metObs/collections/observation/items", DMI_OBS)
+    station, dist = dmi.nearest(55.6761, 12.5683)
+    assert station["id"] == "06180" and 7 < dist < 10       # full station within the detour beats the nearest one
+    lines = dmi.summary()
+    assert lines[0].startswith("DMI Airport (06180,")
+    assert "temperature 9.4°C" in lines[1] and "humidity 96%" in lines[1] and "wind 4.1 m/s" in lines[1]
+    by_id = dmi.summary(station_id="06180")[0]
+    assert by_id.startswith("DMI Airport (06180)") and "km away" not in by_id
+
+
+def test_dmi_outside_denmark(net, tmp_path):
+    import dmi
+    write_config(tmp_path, {"location": {"name": "Berlin", "lat": 52.52, "lon": 13.40}})
+    net.add("opendataapi.dmi.dk/v2/metObs/collections/station/items", DMI_STATIONS)
+    with pytest.raises(common.SetupError, match="DMI covers Denmark"):
+        dmi.summary()

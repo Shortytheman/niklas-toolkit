@@ -60,7 +60,8 @@ Reads `requirements*.txt`, `poetry.lock`, `uv.lock`, `Pipfile.lock`, `pdm.lock`,
 | Tool | Kind | What it does |
 | --- | --- | --- |
 | `brief` | script + skill | A morning brief from your settings: weather, next holiday, currencies, crypto, stocks, portfolio, headlines, new releases. One failing source never sinks the rest |
-| `weather` | script | Now and the next days, from Open-Meteo |
+| `weather` | script | Forecast for now and the next days, from Open-Meteo |
+| `dmi` | script | What the nearest DMI station measured in the last hour (prefers a full station with wind and rain) |
 | `news` | script | Hacker News top stories, your RSS/Atom feeds, and new GitHub releases (via `releases.atom`, no API limit) |
 | `holidays_dk` | script | Danish public holidays computed offline from Easter, and working days in a period |
 | `dk_stats` | script | Statistics Denmark without a key: inflation, CPI, population shortcuts, plus search, table info and any table |
@@ -72,7 +73,7 @@ Reads `requirements*.txt`, `poetry.lock`, `uv.lock`, `Pipfile.lock`, `pdm.lock`,
 **Information only, never investment advice.** The scripts print descriptive numbers (prices, changes, low/high,
 largest fall from a high, volatility) with their source and time, and a disclaimer. The `markets` skill forbids
 Claude from recommending, predicting or trading. Free data tiers are for personal use, so every user brings their
-own keys; the toolkit never ships or shares one. Weather data: Open-Meteo.com, CC BY 4.0.
+own keys; the toolkit never ships or shares one. Weather data: Open-Meteo.com and DMI; statistics: Statistics Denmark; all CC BY 4.0.
 
 Settings live in one personal file outside any project (`python packs/brief/scripts/brief_config.py --init`
 creates it): location, currency, watchlists, feeds, repos and keys.
