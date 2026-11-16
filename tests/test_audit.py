@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 
 import pytest
@@ -189,3 +190,75 @@ def test_toolkit_packs_scan_clean():
     for pack in ("core", "godot", "deps", "brief", "audit"):
         found = plugin_scan.scan_dir(ROOT / "packs" / pack, pack)
         assert not [f for f in found if f.severity in ("high", "medium")], (pack, found)
+
+
+def test_env_doctor_path_and_python(tmp_path):
+    import env_doctor
+    real = tmp_path / "bin"
+    real.mkdir()
+    value = os.pathsep.join([str(real), str(tmp_path / "gone"), str(real) + os.sep, ""])
+    found = {f.check: f for f in env_doctor.check_path(value, windows=False)}
+    assert "gone" in found["path-missing"].message
+    assert found["path-duplicate"].message.startswith("1 folder(s)")
+
+    stub = tmp_path / "WindowsApps" / "python3.exe"
+    stub.parent.mkdir()
+    stub.write_bytes(b"")
+    lines, findings = env_doctor.check_python(True, {"python3": str(stub), "py": r"C:\Windows\py.exe"}.get)
+    assert [f.check for f in findings] == ["store-python"] and lines == [r"py: C:\Windows\py.exe"]
+    _, findings = env_doctor.check_python(True, {"python": r"C:\u\.pyenv\pyenv-win\shims\python.bat"}.get)
+    assert [f.check for f in findings] == ["pyenv-shim"]
+    _, findings = env_doctor.check_python(False, lambda name: None)
+    assert [f.check for f in findings] == ["no-python"]
+
+
+def test_env_doctor_git_bash(tmp_path):
+    import env_doctor
+    git = tmp_path / "Git" / "cmd" / "git.exe"
+    bash = tmp_path / "Git" / "bin" / "bash.exe"
+    for f in (git, bash):
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_bytes(b"x")
+    assert env_doctor.git_bash(lambda n: str(git), env={}) == (bash.resolve(), [])
+    path, found = env_doctor.git_bash(lambda n: None, env={})
+    assert path is None and found[0].check == "git-bash"
+    path, found = env_doctor.git_bash(lambda n: str(git), env={"CLAUDE_CODE_GIT_BASH_PATH": str(tmp_path / "no.exe")})
+    assert path is None and "does not exist" in found[0].message
+
+
+def test_env_doctor_line_endings_mcp_and_windows_settings(tmp_path):
+    import subprocess
+    import env_doctor
+    from mcp_cost import Server
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git = ["git", "-c", "core.autocrlf=false", "-C", str(repo)]
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    (repo / "ok.sh").write_bytes(b"echo ok\n")
+    (repo / "bad.sh").write_bytes(b"echo bad\r\n")
+    subprocess.run(git + ["add", "."], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "core.autocrlf", "true"], check=True)
+    lines, findings = env_doctor.check_line_endings(repo)
+    assert lines == ["git core.autocrlf: true"]
+    checks = sorted((f.check, f.message.split(" ")[0]) for f in findings)
+    assert checks == [("crlf-shell-script", "bad.sh"), ("eol-risk", "2")]
+    (repo / ".gitattributes").write_text("*.sh text eol=lf\n", encoding="utf-8")
+    assert [f.check for f in env_doctor.check_line_endings(repo)[1]] == ["crlf-shell-script"]
+
+    servers = [Server("a", "user", {"command": "npx", "args": ["-y", "pkg"]}),
+               Server("b", "user", {"command": "cmd", "args": ["/c", "npx", "pkg"]}),
+               Server("c", "user", {"type": "http", "url": "https://x"}),
+               Server("d", "project", {"command": r"C:\nodejs\npm"})]
+    assert [f.message.split("'")[1] for f in env_doctor.check_mcp(servers)] == ["a", "d"]
+
+    lines, findings = env_doctor.check_windows_settings("Restricted", False)
+    assert [f.check for f in findings] == ["execution-policy", "long-paths"]
+    assert env_doctor.check_windows_settings("RemoteSigned", True)[1] == []
+    assert env_doctor.check_windows_settings(None, None) == ([], [])
+
+
+def test_env_doctor_main_json(tmp_path, capsys):
+    import env_doctor
+    code = env_doctor.main([str(tmp_path), "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert code in (0, 1) and data["environment"][0].startswith("System:")

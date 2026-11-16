@@ -1,6 +1,6 @@
 ---
 name: audit
-description: Audit the Claude Code setup - context tokens per installed skill, agent, CLAUDE.md and MCP server, skills that never fire, failing hooks (missing programs, Windows python3 stub, CRLF), and risky code in plugins. Use when context fills up, to see what plugins cost or which skills are used, to clean up, when a hook fails, or before trusting a plugin.
+description: Audit the Claude Code setup - context tokens per installed skill, agent, CLAUDE.md and MCP server, skills that never fire, failing hooks, machine setup problems (Git Bash, Python, CRLF, npx MCP servers on Windows, PATH), and risky code in plugins. Use when context fills up, to see what plugins cost or which skills are used, to clean up, when a hook, script or MCP server fails to start, or before trusting a plugin.
 ---
 
 # Audit the Claude Code setup
@@ -12,6 +12,7 @@ nothing anywhere.
 python "${CLAUDE_PLUGIN_ROOT}/scripts/context_cost.py" "<project>"   # tokens per plugin, largest items
 python "${CLAUDE_PLUGIN_ROOT}/scripts/skill_usage.py" "<project>" --days 30   # used vs never used
 python "${CLAUDE_PLUGIN_ROOT}/scripts/hook_doctor.py" "<project>"    # hooks that will fail, and why
+python "${CLAUDE_PLUGIN_ROOT}/scripts/env_doctor.py" "<project>"     # machine setup: Git Bash, Python, CRLF, PATH
 python "${CLAUDE_PLUGIN_ROOT}/scripts/plugin_scan.py" "<project>"    # risky patterns in installed plugins
 python "${CLAUDE_PLUGIN_ROOT}/scripts/plugin_scan.py" --path <dir>   # a plugin before installing it
 ```
@@ -30,6 +31,9 @@ definitions. That runs the servers' programs: ask the user first, unless they as
 - **hook_doctor** names the hook, where it is configured, and the fix. `store-python` means `python3` opens the
   Microsoft Store: the fix is installing Python or turning off the alias (Settings > Apps > Advanced app settings
   > App execution aliases). `crlf-script` means a `.sh` file has Windows line endings.
+- **env_doctor** reads PATH, git settings and (on Windows) the registry and PowerShell's execution policy. Errors
+  and warnings break things now; notes (dead or duplicate PATH entries, long paths) are housekeeping. The
+  execution policy and long paths are system security settings: tell the user the fix, never change them.
 
 - **plugin_scan** lists download-and-run commands, obfuscated code, access to SSH keys, credentials or browser
   data, destructive deletes, hooks that use the network, environment dumps, and skill text that steers Claude
