@@ -9,6 +9,7 @@ godot: a play triangle in a rounded frame, on dark green (run the game)
 from __future__ import annotations
 
 import math
+import sys
 import struct
 import zlib
 from pathlib import Path
@@ -85,12 +86,57 @@ def godot_shape(x: float, y: float) -> float:
     return min(frame, play)
 
 
+def capsule_sd(x: float, y: float, ax: float, ay: float, bx: float, by: float, r: float) -> float:
+    """Signed distance to a line segment with round ends of radius r."""
+    px, py, ex, ey = x - ax, y - ay, bx - ax, by - ay
+    t = max(0.0, min(1.0, (px * ex + py * ey) / (ex * ex + ey * ey)))
+    return math.hypot(px - ex * t, py - ey * t) - r
+
+
+def box_sd(x: float, y: float, cx: float, cy: float, hw: float, hh: float, r: float) -> float:
+    """Signed distance to a rounded rectangle with half-width hw and half-height hh."""
+    qx, qy = abs(x - cx) - (hw - r), abs(y - cy) - (hh - r)
+    return math.hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - r
+
+
+def deps_shape(x: float, y: float) -> float:
+    """Three stacked packages, outlined."""
+    s = SIZE
+    boxes = [box_sd(x, y, s * 0.5, s * (0.33 + 0.17 * i), s * 0.22, s * 0.065, s * 0.025) for i in range(3)]
+    return min(abs(b) - s * 0.022 for b in boxes)
+
+
+def brief_shape(x: float, y: float) -> float:
+    """A sun: a disc and eight rays."""
+    c, s = SIZE / 2, SIZE
+    disc = math.hypot(x - c, y - c) - s * 0.15
+    rays = min(capsule_sd(x, y, c + math.cos(a) * s * 0.23, c + math.sin(a) * s * 0.23,
+                          c + math.cos(a) * s * 0.33, c + math.sin(a) * s * 0.33, s * 0.03)
+               for a in [i * math.pi / 4 for i in range(8)])
+    return min(disc, rays)
+
+
+def audit_shape(x: float, y: float) -> float:
+    """A magnifying glass."""
+    s = SIZE
+    cx, cy = s * 0.44, s * 0.44
+    ring = abs(math.hypot(x - cx, y - cy) - s * 0.17) - s * 0.04
+    handle = capsule_sd(x, y, s * 0.57, s * 0.57, s * 0.72, s * 0.72, s * 0.05)
+    return min(ring, handle)
+
+
 def main() -> None:
     icons = {
         "core": (core_shape, (37, 56, 140), (240, 244, 255)),
         "godot": (godot_shape, (24, 92, 70), (236, 252, 244)),
+        "deps": (deps_shape, (150, 72, 24), (255, 243, 232)),
+        "brief": (brief_shape, (18, 110, 140), (255, 246, 214)),
+        "audit": (audit_shape, (88, 50, 130), (244, 236, 255)),
     }
+    only = set(sys.argv[1:])
     for pack, (shape, bg, fg) in icons.items():
+        if only and pack not in only:
+            continue
         out = ROOT / "packs" / pack / ".claude-plugin" / "icon.png"
         out.write_bytes(render(shape, bg, fg))
         print(f"wrote {out.relative_to(ROOT)}")

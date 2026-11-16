@@ -1,8 +1,12 @@
 {
   "verify": [
+    {"name": "shared code in sync", "run": "python tools/sync_shared.py --check"},
     {"name": "tests", "run": "python -m pytest -q tests", "timeout": 900},
     {"name": "validate marketplace", "run": "claude plugin validate --strict ."},
     {"name": "validate core", "run": "claude plugin validate --strict packs/core"},
-    {"name": "validate godot", "run": "claude plugin validate --strict packs/godot"}
+    {"name": "validate godot", "run": "claude plugin validate --strict packs/godot"},
+    {"name": "validate deps", "run": "claude plugin validate --strict packs/deps"},
+    {"name": "validate brief", "run": "claude plugin validate --strict packs/brief"},
+    {"name": "validate audit", "run": "claude plugin validate --strict packs/audit"}
   ]
 }

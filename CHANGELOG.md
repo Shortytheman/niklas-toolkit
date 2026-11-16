@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.0 (2026-11-16)
+
+Three new packs, chosen from research into the Claude Code plugin landscape and free data APIs.
+
+- **deps**: `dep_audit` (known vulnerabilities from OSV.dev with CVSS 3.x scores, aliases merged, upgrade target
+  per package), `outdated`, `licenses`, for PyPI, npm, crates.io, Go, Packagist and RubyGems; a hook that reports
+  vulnerabilities an edit to a dependency file introduced.
+- **brief**: morning brief, weather (Open-Meteo), Hacker News / RSS / GitHub releases, Danish holidays and working
+  days, and markets: exchange rates (ECB, fallback Frankfurter), crypto (CoinGecko, fallback Kraken), stocks with
+  your own free Finnhub or Tiingo key or the opt-in unofficial Yahoo source, and portfolio valuation from a CSV.
+  Descriptive only, with source, time and disclaimer on every figure.
+- **audit**: context cost of installed skills, agents and CLAUDE.md files; skill usage from local session logs;
+  a hook doctor for missing programs, the Windows `python3` Store placeholder, CRLF scripts and bad matchers.
+- `shared/netlib.py`: one standard-library HTTP layer (cache with ETag revalidation, retries honouring
+  Retry-After, identifying User-Agent, keys from environment or config), synced into the packs that use it.
+- CI also runs the tests on Windows.
+
 ## 0.3.0 (2026-11-16)
 
 - `export`: every zip gets a `.sha256` checksum file. `--tag` commits the version change and creates the git

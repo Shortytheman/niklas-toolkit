@@ -4,19 +4,34 @@
     "name": "Niklas"
   },
   "metadata": {
-    "description": "Personal Claude Code toolkit: a general core pack plus one pack per domain.",
-    "version": "0.3.0"
+    "description": "Claude Code toolkit: a general core pack, Godot 4 tools, dependency health, everyday information and markets, and an audit of your Claude Code setup.",
+    "version": "0.4.0"
   },
   "plugins": [
     {
       "name": "core",
       "source": "./packs/core",
-      "description": "General tools used in every project: verify, learn, handoff."
+      "description": "General tools used in every project: verify, learn, handoff, reviewer agent."
     },
     {
       "name": "godot",
       "source": "./packs/godot",
-      "description": "Godot 4 tools: headless export, run-and-report, screenshots, tests."
+      "description": "Godot 4 tools: headless export, run-and-report, screenshots with UI steps, project doctor, GDScript lint hook, godot-index MCP server."
+    },
+    {
+      "name": "deps",
+      "source": "./packs/deps",
+      "description": "Dependency health: known vulnerabilities (OSV.dev), outdated packages and licenses for PyPI, npm, crates.io, Go, Packagist and RubyGems. No API keys."
+    },
+    {
+      "name": "brief",
+      "source": "./packs/brief",
+      "description": "Morning brief, weather, headlines, GitHub releases, Danish holidays, and markets: exchange rates, crypto, stocks with your own free key, portfolio from your CSV. Information only, never investment advice."
+    },
+    {
+      "name": "audit",
+      "source": "./packs/audit",
+      "description": "Audit your Claude Code setup: context cost of installed skills and CLAUDE.md files, skills that never fire, and hooks that will fail on Windows."
     }
   ]
 }

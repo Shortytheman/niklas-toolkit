@@ -1,0 +1,17 @@
+{
+  "description": "After an edit to a lockfile or requirements file, report vulnerabilities the edit introduced.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/deps_hook.py\"",
+            "timeout": 45
+          }
+        ]
+      }
+    ]
+  }
+}
