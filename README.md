@@ -170,6 +170,25 @@ Godot excludes from exports, so every exported build shipped without map props w
 packages from 2023 and earlier showed 29 known vulnerabilities in six of them, with the version that fixes each
 package, in under 3 seconds.
 
+`pck_size.py` compared two builds of the same game: 201.9 MB to 236.2 MB, with 22.6 MB of the growth in one art
+folder and a test folder that shipped in the release build. `godot_api.py` answers from the Godot executable
+itself, so Claude stops writing Godot 3 calls (`instance()`, `KinematicBody2D`) in a Godot 4.7 project.
+
+## Skill trigger evals
+
+A skill only helps when Claude loads it at the right moment, so every skill has trigger cases in
+`packs/<pack>/evals/`: requests phrased the way a user would type them, never naming the skill, plus nearby
+requests that must not load one. `claude plugin eval` runs them in isolated sessions and a free grader checks
+which skill Claude chose:
+
+```bash
+python tools/run_evals.py --runs 3       # all packs; writes docs/evals.md with the pass rate per case
+python tools/run_evals.py --pack godot   # one pack
+```
+
+A test makes sure no skill is added without a trigger case. The runs use your Claude Code login and count
+against your usage.
+
 ## Development
 
 ```bash
@@ -188,7 +207,8 @@ Windows, and validates every manifest with `--strict`.
 packs/<pack>/                     one plugin per pack: skills/, hooks/, agents/, scripts/, servers/
 shared/netlib.py                  HTTP layer (cache, retries, User-Agent, keys), copied into packs that need it
 tests/                            pytest suite, fixture Godot projects, fake network
-tools/                            icon drawing, shared-code sync
+tools/                            icon drawing, shared-code sync, eval runner
+packs/<pack>/evals/               skill trigger eval cases for `claude plugin eval`
 docs/backlog.md                   ideas waiting for real use
 ```
 
