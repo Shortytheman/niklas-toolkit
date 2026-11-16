@@ -1,6 +1,6 @@
 ---
 name: brief
-description: Morning brief and everyday lookups - weather, Hacker News and RSS headlines, new GitHub releases, Danish public holidays and working days. Use when the user asks for a brief, a summary of the day, the weather, news, what's new in a project's releases, the next holiday, or how many working days are in a period.
+description: Morning brief and everyday lookups - weather forecasts and DMI station measurements, Hacker News and RSS headlines, new GitHub releases, Danish holidays and working days, Danish statistics (inflation, population). Use when asked for a brief or summary of the day, the weather, news, new releases, the next holiday, working days, or Danish official figures.
 ---
 
 # Brief and everyday lookups

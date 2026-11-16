@@ -1,6 +1,6 @@
 ---
 name: markets
-description: Look up exchange rates, crypto prices, stock and ETF quotes and price history, and value the user's own portfolio CSV in DKK or another currency. Use when the user asks what a currency, coin, stock or fund costs, how it moved over a period, to convert money, or what their holdings are worth. Descriptive information only - never investment advice.
+description: Exchange rates, crypto, stock and ETF quotes and history, economic series (FRED), and the user's portfolio CSV valued in DKK or another currency. Use when asked what something costs, how it moved, to convert money, about interest rates or inflation data, or what holdings are worth. Descriptive only - never investment advice.
 ---
 
 # Markets: facts, not advice

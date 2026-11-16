@@ -1,6 +1,6 @@
 ---
 name: audit
-description: Audit the user's Claude Code setup - context tokens used by installed skills, agents, commands and CLAUDE.md files, skills that never get used, and hooks that fail (missing programs, Windows python3 Store stub, CRLF scripts). Use when the user asks why context fills up, what their plugins cost, which skills they use, to clean up their setup, or why a hook does not work.
+description: Audit the Claude Code setup - context tokens per installed skill, agent, CLAUDE.md and MCP server, skills that never fire, failing hooks (missing programs, Windows python3 stub, CRLF), and risky code in plugins. Use when context fills up, to see what plugins cost or which skills are used, to clean up, when a hook fails, or before trusting a plugin.
 ---
 
 # Audit the Claude Code setup

@@ -1,6 +1,6 @@
 ---
 name: doctor
-description: Find broken resource references in a Godot 4 project without running it - missing files, wrong letter case that breaks exports, stale uids, and unused assets. Use before an export or release, after moving, renaming or deleting files, when the game fails to load a resource, or when the user asks to clean up the project.
+description: Find broken resource references in a Godot 4 project without running it - missing files, letter case that breaks exports, stale uids, duplicate class_names, unused assets. Use before an export, after moving, renaming or deleting files, when a resource fails to load, or to clean up the project.
 ---
 
 # Project doctor

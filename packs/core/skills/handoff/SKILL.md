@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Save the state of the current work to a handoff file so the next session can continue without re-discovering it, or resume from one. Use when the user says to stop, pause, hand off, "continue tomorrow", or "save where we are", when the conversation is getting long in the middle of a task, or at the start of a session when .claude/handoff.md exists and the user asks to continue.
+description: Save the current work's state to .claude/handoff.md so the next session continues without re-discovering it, or resume from that file. Use when the user says stop, pause, hand off, "continue tomorrow" or "save where we are", when a long conversation is mid-task, or when asked to continue and the file exists.
 ---
 
 # Handoff: save and resume work
