@@ -4,11 +4,11 @@ Ideas and fixes waiting for real use to justify them. The `learn` skill adds lin
 
 - Godot test runner (GUT or gdUnit4): build when a project adopts one of them.
 - Demo recording for the README.
-- `brief`: DMI forecasts (EDR API) next to the measured observations.
 - `brief`: FRED economic series (needs a free key and its "not endorsed" notice).
 
 ## Done
 
+- DMI HARMONIE forecasts (0.9.0)
 - DMI observations in `brief` (0.8.0)
 - `fix_deps` for `pyproject.toml` and `Cargo.toml` (0.7.0)
 - `release` skill (0.6.0)

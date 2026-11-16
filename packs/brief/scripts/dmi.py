@@ -112,12 +112,57 @@ def summary(place: str | None = None, station_id: str | None = None) -> list[str
     return [f"DMI {station['name']} ({station['id']}{where}), measured {fmt_time(newest)}:", "  " + ", ".join(parts)]
 
 
+EDR = "https://opendataapi.dmi.dk/v1/forecastedr/collections/harmonie_dini_sf/position"
+
+
+def forecast(lat: float, lon: float) -> list[dict]:
+    """Hourly HARMONIE DINI forecast for a point: [{time, temp_c, wind, precip_mm}] (precip per hour)."""
+    data = netlib.get_json(EDR, ttl=1800, source="DMI forecast", timeout=60, params={
+        "coords": f"POINT({lon:.4f} {lat:.4f})", "crs": "crs84", "f": "GeoJSON",
+        "parameter-name": "temperature-2m,wind-speed,total-precipitation"})
+    rows, previous_total = [], 0.0
+    for f in sorted(data.get("features", []), key=lambda f: f["properties"]["step"]):
+        p = f["properties"]
+        total = float(p.get("total-precipitation") or 0.0)   # accumulated since the model run started
+        rows.append({"time": p["step"], "temp_c": float(p["temperature-2m"]) - 273.15,  # Kelvin
+                     "wind": float(p.get("wind-speed") or 0.0), "precip_mm": max(0.0, total - previous_total)})
+        previous_total = total
+    return rows
+
+
+def forecast_lines(place: str | None = None, hours: int = 12) -> list[str]:
+    import weather
+    from collections import OrderedDict
+    name, lat, lon = weather.locate(place)
+    from datetime import datetime, timedelta, timezone
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")
+    rows = [r for r in forecast(lat, lon) if r["time"][:16] >= cutoff]  # the run started hours ago: skip the past
+    if not rows:
+        raise SetupError(f"DMI has no forecast for {name} (the HARMONIE DINI model covers northern Europe)")
+    lines = [f"DMI HARMONIE forecast for {name}:"]
+    for r in rows[:hours:3]:
+        lines.append(f"  {fmt_time(r['time'])[-5:]}  {r['temp_c']:5.1f}°C  wind {r['wind']:.1f} m/s  "
+                     f"rain {r['precip_mm']:.1f} mm/h")
+    days: "OrderedDict[str, list]" = OrderedDict()
+    for r in rows:
+        days.setdefault(fmt_time(r["time"])[:10], []).append(r)
+    for day, rs in days.items():
+        if len(rs) < 6:
+            continue  # a sliver of a day at the end of the run says little
+        lines.append(f"  {day}  {min(r['temp_c'] for r in rs):.1f}..{max(r['temp_c'] for r in rs):.1f}°C  "
+                     f"rain {sum(r['precip_mm'] for r in rs):.1f} mm  wind up to {max(r['wind'] for r in rs):.1f} m/s"
+                     + (f"  ({len(rs)} h)" if len(rs) < 24 else ""))
+    return lines
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Measured weather from the nearest DMI station.")
+    ap = argparse.ArgumentParser(description="Measured weather and forecasts from DMI.")
     ap.add_argument("place", nargs="*", help="place in Denmark (default: config location)")
     ap.add_argument("--station", help="DMI station id, e.g. 06180")
+    ap.add_argument("--forecast", action="store_true", help="DMI's own HARMONIE forecast instead of measurements")
     a = ap.parse_args()
-    for line in summary(" ".join(a.place) or None, a.station):
+    lines = forecast_lines(" ".join(a.place) or None) if a.forecast else summary(" ".join(a.place) or None, a.station)
+    for line in lines:
         print(line)
     print(ATTRIBUTION)
     return 0

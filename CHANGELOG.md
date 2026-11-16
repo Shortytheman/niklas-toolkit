@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 (2026-11-16)
+
+- **brief/dmi --forecast**: DMI's own HARMONIE forecast for a point, the next hours and a summary per day
+  (temperature range, rain, strongest wind), next to the station measurements. Converts the model's Kelvin and
+  accumulated rain, and skips hours that are already past.
+
 ## 0.8.0 (2026-11-16)
 
 - **brief/dmi**: what the nearest DMI station measured in the last hour (temperature, humidity, wind and gusts,

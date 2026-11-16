@@ -12,6 +12,7 @@ All scripts are in `${CLAUDE_PLUGIN_ROOT}/scripts/` and need no API keys:
 | Morning brief (everything configured) | `python brief.py` (`--only weather news` for parts) |
 | Weather now and next days (forecast) | `python weather.py [place] [--days N]` |
 | Measured right now at the nearest DMI station (Denmark) | `python dmi.py [place] [--station ID]` |
+| DMI's own forecast (HARMONIE, about 2.5 days) | `python dmi.py --forecast [place]` |
 | Hacker News, feeds, GitHub releases | `python news.py [--hn 10] [--feeds] [--releases]` |
 | Danish holidays | `python holidays_dk.py [year]` |
 | Working days in a period | `python holidays_dk.py --workdays 2026-12-01 2026-12-31` |
@@ -26,7 +27,8 @@ the script says what to add; offer to add it with the user's values, and never i
 
 - Give the brief as the script prints it, lightly tidied: do not drop the source and attribution lines (Open-Meteo,
   DMI and Statistics Denmark require credit, CC BY 4.0).
-- Forecast (weather.py) and measurement (dmi.py) are different things: say which one a number is.
+- Forecasts (weather.py, dmi.py --forecast) and measurements (dmi.py) are different things: say which one a
+  number is. Two models can disagree, especially on rain; when they do, say so instead of picking one.
 - Headlines: show title, link and age; do not summarize articles you have not read. If the user wants a summary,
   fetch the article first.
 - Holidays marked "customary" (Christmas Eve, New Year's Eve, Constitution Day) are not official days off; say so

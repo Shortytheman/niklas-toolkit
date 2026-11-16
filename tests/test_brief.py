@@ -301,3 +301,27 @@ def test_dmi_outside_denmark(net, tmp_path):
     net.add("opendataapi.dmi.dk/v2/metObs/collections/station/items", DMI_STATIONS)
     with pytest.raises(common.SetupError, match="DMI covers Denmark"):
         dmi.summary()
+
+
+def test_dmi_forecast(net, tmp_path):
+    import dmi
+    from datetime import datetime, timedelta, timezone
+    write_config(tmp_path, {"location": {"name": "Home", "lat": 55.6761, "lon": 12.5683}})
+    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    steps = [now + timedelta(hours=h) for h in range(-3, 30)]
+    features = [{"properties": {"step": t.strftime("%Y-%m-%dT%H:%M:%S.000Z"), "temperature-2m": 273.15 + i,
+                                "wind-speed": 2.0, "total-precipitation": 0.5 * i}} for i, t in enumerate(steps)]
+    net.add("forecastedr/collections/harmonie_dini_sf/position", {"type": "FeatureCollection", "features": features})
+    rows = dmi.forecast(55.6761, 12.5683)
+    assert rows[0]["temp_c"] == pytest.approx(0.0) and rows[1]["precip_mm"] == pytest.approx(0.5)  # Kelvin, per hour
+    lines = dmi.forecast_lines()
+    assert lines[0] == "DMI HARMONIE forecast for Home:"
+    first_hour = float(lines[1].split("°C")[0].split()[-1])
+    assert first_hour >= 2.0          # the hours before now - 1 h are skipped
+    url = next(u for _, u, _, _ in net.calls if "forecastedr" in u)
+    assert "POINT%2812.5683+55.6761%29" in url or "POINT(12.5683 55.6761)" in urllib_unquote(url)
+
+
+def urllib_unquote(url):
+    import urllib.parse
+    return urllib.parse.unquote_plus(url)

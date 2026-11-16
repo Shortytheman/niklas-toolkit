@@ -61,7 +61,7 @@ Reads `requirements*.txt`, `poetry.lock`, `uv.lock`, `Pipfile.lock`, `pdm.lock`,
 | --- | --- | --- |
 | `brief` | script + skill | A morning brief from your settings: weather, next holiday, currencies, crypto, stocks, portfolio, headlines, new releases. One failing source never sinks the rest |
 | `weather` | script | Forecast for now and the next days, from Open-Meteo |
-| `dmi` | script | What the nearest DMI station measured in the last hour (prefers a full station with wind and rain) |
+| `dmi` | script | What the nearest DMI station measured in the last hour (prefers a full station with wind and rain), and DMI's own HARMONIE forecast with `--forecast` |
 | `news` | script | Hacker News top stories, your RSS/Atom feeds, and new GitHub releases (via `releases.atom`, no API limit) |
 | `holidays_dk` | script | Danish public holidays computed offline from Easter, and working days in a period |
 | `dk_stats` | script | Statistics Denmark without a key: inflation, CPI, population shortcuts, plus search, table info and any table |
