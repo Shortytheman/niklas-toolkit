@@ -283,3 +283,55 @@ def test_fix_deps_major_guard_and_same_major(monkeypatch, tmp_path, capsys):
     assert (proj / "requirements.txt").read_text(encoding="utf-8") == "urllib3==1.26.4\n"
     assert fix_deps.main([str(proj), "--apply", "--allow-major"]) == 0
     assert (proj / "requirements.txt").read_text(encoding="utf-8") == "urllib3==2.6.0\n"
+
+
+def test_edit_pyproject_pep508_and_poetry(tmp_path):
+    import fix_deps
+    pp = tmp_path / "pyproject.toml"
+    pp.write_text('[project]\ndependencies = [\n  "Requests[socks]>=2.25,<3 ; python_version>\'3.8\'",\n'
+                  '  "urllib3",\n  "jinja2<2.11",\n]\n\n[tool.poetry.dependencies]\npython = "^3.10"\n'
+                  'flask = "^2.0"\nrich = { version = "~13.0", optional = true }\n', encoding="utf-8")
+    assert fix_deps.edit_pyproject(pp, "requests", "2.32.0")
+    assert fix_deps.edit_pyproject(pp, "urllib3", "1.26.19")
+    assert not fix_deps.edit_pyproject(pp, "jinja2", "3.1.6")      # upper bound excludes the fix: left alone
+    assert fix_deps.edit_pyproject(pp, "flask", "2.3.2")
+    assert fix_deps.edit_pyproject(pp, "rich", "13.5.0")
+    text = pp.read_text(encoding="utf-8")
+    assert '"Requests[socks]>=2.32.0,<3 ; python_version>\'3.8\'"' in text
+    assert '"urllib3>=1.26.19"' in text and '"jinja2<2.11"' in text
+    assert 'flask = "^2.3.2"' in text and 'rich = { version = "~13.5.0", optional = true }' in text
+    assert 'python = "^3.10"' in text
+
+
+def test_edit_cargo_toml(tmp_path):
+    import fix_deps
+    ct = tmp_path / "Cargo.toml"
+    ct.write_text('[dependencies]\nserde = "1.0.100"\ntokio = { version = "~1.20", features = ["full"] }\n',
+                  encoding="utf-8")
+    assert fix_deps.edit_cargo_toml(ct, "serde", "1.0.180")
+    assert fix_deps.edit_cargo_toml(ct, "tokio", "1.38.2")
+    assert ct.read_text(encoding="utf-8") == ('[dependencies]\nserde = "1.0.180"\n'
+                                              'tokio = { version = "~1.38.2", features = ["full"] }\n')
+
+
+def test_manifest_for_lockfile_projects(tmp_path):
+    import fix_deps
+    (tmp_path / "pyproject.toml").write_text('[project]\ndependencies = ["requests>=2.0"]\n', encoding="utf-8")
+    (tmp_path / "uv.lock").write_text("", encoding="utf-8")
+    direct = lockfiles.Package("PyPI", "requests", "2.25.0", "uv.lock", True)
+    transitive = lockfiles.Package("PyPI", "urllib3", "1.26.4", "uv.lock", False)
+    assert fix_deps.manifest_for(tmp_path, direct) == "pyproject.toml"
+    assert fix_deps.manifest_for(tmp_path, transitive) == ""
+
+
+def test_fix_deps_uv_project(osv_net, tmp_path, capsys):
+    import fix_deps
+    proj = tmp_path / "uvproj"
+    proj.mkdir()
+    (proj / "pyproject.toml").write_text('[project]\nname = "x"\ndependencies = ["requests>=2.20"]\n', encoding="utf-8")
+    (proj / "uv.lock").write_text('version = 1\n\n[[package]]\nname = "requests"\nversion = "2.25.0"\n',
+                                  encoding="utf-8")
+    assert fix_deps.main([str(proj), "--apply"]) == 0
+    out = capsys.readouterr().out
+    assert "in pyproject.toml" in out and "then: uv lock --upgrade-package requests" in out
+    assert '"requests>=2.32.0"' in (proj / "pyproject.toml").read_text(encoding="utf-8")

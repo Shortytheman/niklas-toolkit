@@ -34,8 +34,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/fix_deps.py" "<project>"            # dry 
 python "${CLAUDE_PLUGIN_ROOT}/scripts/fix_deps.py" "<project>" --apply    # write the safe edits
 ```
 
-1. It edits `requirements*.txt` pins and `package.json` specs (keeping `^`/`~`) to the lowest version that fixes
-   everything, and prints the right command for lockfiles, transitive packages and other ecosystems. Show the
+1. It edits `requirements*.txt` pins, `package.json` specs (keeping `^`/`~`), `pyproject.toml` lower bounds and
+   `Cargo.toml` requirements to the lowest version that fixes everything, prints the command that regenerates
+   the lockfile, and the right command for transitive packages and other ecosystems. Show the
    user the dry run before `--apply` when the change is more than a few patch upgrades.
 2. Major upgrades are not applied without `--allow-major`; the plan says which version on the current major
    line fixes how many advisories, which is often the safer first step. Read the changelog before crossing a

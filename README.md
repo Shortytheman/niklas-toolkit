@@ -46,7 +46,7 @@ much). To try a pack from a local checkout: `claude --plugin-dir ./packs/deps`.
 | Tool | Kind | What it does |
 | --- | --- | --- |
 | `dep_audit` | script + skill | Known vulnerabilities from OSV.dev (no key) for PyPI, npm, crates.io, Go, Packagist and RubyGems lockfiles: severity with CVSS 3.x score, CVE, fixed versions, and the lowest version that fixes them all |
-| `fix_deps` | script + skill | Plans the upgrades that fix them (dry run), and with `--apply` edits `requirements*.txt` and `package.json`; prints the right command for lockfiles and other ecosystems; holds back major upgrades and names the safest fix on the current major line |
+| `fix_deps` | script + skill | Plans the upgrades that fix them (dry run), and with `--apply` edits `requirements*.txt`, `package.json`, `pyproject.toml` and `Cargo.toml`; prints the lockfile command and the right command for other ecosystems; holds back major upgrades and names the safest fix on the current major line |
 | `outdated` | script + skill | Newer releases of direct dependencies, sorted major / minor / patch |
 | `licenses` | script + skill | License inventory: permissive, weak copyleft, copyleft, unknown; `--fail-on copyleft` for CI |
 | dependency hook | hook | After an edit to a lockfile or requirements file, reports only the vulnerabilities that edit introduced, compared with git HEAD |

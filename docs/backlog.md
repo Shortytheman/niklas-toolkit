@@ -7,10 +7,10 @@ Ideas and fixes waiting for real use to justify them. The `learn` skill adds lin
 - `brief`: DMI (Danish weather service) as an alternative source; check its forecast endpoints after the
   November 2026 change first.
 - `brief`: FRED economic series (needs a free key and its "not endorsed" notice).
-- `deps`: `fix_deps` for `pyproject.toml` ranges and Cargo.toml.
 
 ## Done
 
+- `fix_deps` for `pyproject.toml` and `Cargo.toml` (0.7.0)
 - `release` skill (0.6.0)
 - `docs-check`, `fix_deps`, `plugin_scan`, MCP measurement, `dk_stats` (0.5.0)
 - `deps`, `brief` and `audit` packs, shared HTTP layer, Windows CI (0.4.0)
