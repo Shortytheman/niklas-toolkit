@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "godot-index": {
+      "command": "python",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/servers/godot_index/server.py"]
+    }
+  }
+}

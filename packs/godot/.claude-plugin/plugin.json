@@ -1,0 +1,10 @@
+{
+  "name": "godot",
+  "version": "0.1.0",
+  "description": "Godot 4 tools: headless export, run-and-report, screenshots, tests.",
+  "author": {
+    "name": "Niklas"
+  },
+  "license": "MIT",
+  "keywords": ["godot", "gamedev", "export"]
+}

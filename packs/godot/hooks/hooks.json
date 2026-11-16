@@ -1,0 +1,17 @@
+{
+  "description": "Lint GDScript after each edit and report only the problems the edit introduced.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/gdscript_hook.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

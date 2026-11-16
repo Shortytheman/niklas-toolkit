@@ -1,0 +1,22 @@
+{
+  "name": "niklas-toolkit",
+  "owner": {
+    "name": "Niklas"
+  },
+  "metadata": {
+    "description": "Personal Claude Code toolkit: a general core pack plus one pack per domain.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "core",
+      "source": "./packs/core",
+      "description": "General tools used in every project: verify, learn, handoff."
+    },
+    {
+      "name": "godot",
+      "source": "./packs/godot",
+      "description": "Godot 4 tools: headless export, run-and-report, screenshots, tests."
+    }
+  ]
+}
