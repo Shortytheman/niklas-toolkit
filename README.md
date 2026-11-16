@@ -104,6 +104,10 @@ Measured on YouTD - The Roguelike, a Godot 4.7 tower defense game with 750 GDScr
 | Release export + zip | manual: editor, export dialog, copy, zip | one command, about 1.5 min, no interaction |
 | Check every script for parse errors | open the editor | `run_report.py --check`, 30 s |
 | Look at a UI change | run the game and look | `screenshot.py`, 25 s, Claude reads the PNG |
+| Find broken references in 8,280 files | not done | `doctor.py`, 6 s |
+
+The first doctor run found a bug that only existed in release builds: the map props' data file sat in a folder
+Godot excludes from exports, so every exported build shipped without map props while the editor showed them.
 
 ## Development
 
