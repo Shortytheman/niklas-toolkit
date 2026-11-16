@@ -346,3 +346,24 @@ def test_fred(net, tmp_path, capsys, monkeypatch):
     assert fred.NOTICE in out                                   # required by FRED's terms
     obs_url = next(u for _, u, _, _ in net.calls if "observations" in u)
     assert "api_key=k123" in obs_url and "sort_order=desc" in obs_url
+
+
+def test_schedule_brief(monkeypatch, capsys):
+    import schedule_brief
+    cmd = schedule_brief.windows_create("06:45")
+    assert cmd[:2] == ["schtasks", "/Create"] and cmd[cmd.index("/ST") + 1] == "06:45"
+    assert cmd[cmd.index("/TR") + 1].endswith('brief.py" --save')
+    assert schedule_brief.cron_line("06:45").startswith("45 6 * * * ")
+    assert schedule_brief.main(["--time", "7:5"]) == 2
+    monkeypatch.setattr(schedule_brief.platform, "system", lambda: "Linux")
+    assert schedule_brief.main(["--create"]) == 0           # never edits a crontab, only prints the line
+    out = capsys.readouterr().out
+    assert "does not edit your crontab" in out and "* * *" in out
+
+
+def test_brief_save(net, tmp_path, monkeypatch, capsys):
+    import brief
+    monkeypatch.setattr(sys, "argv", ["brief.py", "--only", "holidays", "--save"])
+    assert brief.main() == 0
+    saved = list((tmp_path / "toolkit-home" / "briefs").glob("brief-*.md"))
+    assert len(saved) == 1 and "Next holiday:" in saved[0].read_text(encoding="utf-8")

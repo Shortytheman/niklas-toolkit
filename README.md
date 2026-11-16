@@ -59,7 +59,7 @@ Reads `requirements*.txt`, `poetry.lock`, `uv.lock`, `Pipfile.lock`, `pdm.lock`,
 
 | Tool | Kind | What it does |
 | --- | --- | --- |
-| `brief` | script + skill | A morning brief from your settings: weather, next holiday, currencies, crypto, stocks, portfolio, headlines, new releases. One failing source never sinks the rest |
+| `brief` | script + skill | A morning brief from your settings (`--save` keeps a dated copy; `schedule_brief.py` sets up a daily Windows task or cron line): weather, next holiday, currencies, crypto, stocks, portfolio, headlines, new releases. One failing source never sinks the rest |
 | `weather` | script | Forecast for now and the next days, from Open-Meteo |
 | `dmi` | script | What the nearest DMI station measured in the last hour (prefers a full station with wind and rain), and DMI's own HARMONIE forecast with `--forecast` |
 | `news` | script | Hacker News top stories, your RSS/Atom feeds, and new GitHub releases (via `releases.atom`, no API limit) |

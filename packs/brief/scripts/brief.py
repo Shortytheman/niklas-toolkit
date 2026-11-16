@@ -146,6 +146,8 @@ SECTIONS = {"weather": section_weather, "observed": section_observed, "inflation
 def main() -> int:
     ap = argparse.ArgumentParser(description="Morning brief from the configured sources.")
     ap.add_argument("--only", nargs="+", choices=list(SECTIONS), help="just these sections")
+    ap.add_argument("--save", action="store_true",
+                    help="also write the brief to <toolkit folder>/briefs/brief-YYYY-MM-DD.md (for scheduled runs)")
     a = ap.parse_args()
     cfg = settings()
     sections = a.only or cfg.get("brief", {}).get("sections", DEFAULT_SECTIONS)
@@ -153,16 +155,24 @@ def main() -> int:
     if unknown:
         raise SetupError(f"unknown brief section(s) {unknown}; choose from {list(SECTIONS)}")
 
-    print(f"Brief for {datetime.now().strftime('%A %d %B %Y, %H:%M')}\n")
+    out = [f"Brief for {datetime.now().strftime('%A %d %B %Y, %H:%M')}\n"]
     for name in sections:
         try:
             lines = SECTIONS[name](cfg)
         except (netlib.NetError, SetupError, Exception) as e:  # noqa: BLE001 - report and carry on
             lines = [f"{name}: unavailable ({e})"]
         if lines:
-            print("\n".join(lines) + "\n")
+            out.append("\n".join(lines) + "\n")
     if MARKET_SECTIONS & set(sections):
-        print(DISCLAIMER)
+        out.append(DISCLAIMER)
+    text = "\n".join(out)
+    print(text)
+    if a.save:
+        folder = netlib.app_dir() / "briefs"
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / f"brief-{datetime.now():%Y-%m-%d}.md"
+        path.write_text(text + "\n", encoding="utf-8")
+        print(f"\nSaved to {path}")
     return 0
 
 

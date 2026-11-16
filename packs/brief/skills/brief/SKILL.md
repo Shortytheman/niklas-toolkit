@@ -33,7 +33,9 @@ the script says what to add; offer to add it with the user's values, and never i
   fetch the article first.
 - Holidays marked "customary" (Christmas Eve, New Year's Eve, Constitution Day) are not official days off; say so
   when it matters for the answer.
-- For a daily brief at a fixed time, the user can schedule `python brief.py` with Windows Task Scheduler or cron,
-  or with a scheduled task in Claude if they ask for one.
+- For a daily brief without opening Claude, `python schedule_brief.py` shows the scheduled-task command
+  (Windows) or crontab line (Linux/macOS); briefs are saved with `brief.py --save`. Creating the task changes the
+  user's system: show the command and run `--create` only when they say so. After a plugin update, the task
+  must be created again because the plugin's folder changes.
 
 Market sections (currencies, crypto, stocks, portfolio) follow the markets skill's rules.
