@@ -1,6 +1,6 @@
 {
   "name": "godot",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Godot 4 tools: headless export with build size reports, run-and-report, screenshots, and a project doctor.",
   "author": {
     "name": "Niklas"

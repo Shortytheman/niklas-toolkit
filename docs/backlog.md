@@ -7,6 +7,7 @@ Ideas and fixes waiting for real use to justify them. The `learn` skill adds lin
 
 ## Done
 
+- `godot_api` engine API lookup and MCP tool (0.13.0)
 - `pck_size` build size reports, `env_doctor`, scheduled brief survives plugin updates (0.12.0)
 - Daily brief: `--save` and `schedule_brief.py` (0.11.0)
 - FRED economic series (0.10.0)

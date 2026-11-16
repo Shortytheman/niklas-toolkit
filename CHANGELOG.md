@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0 (2026-11-16)
+
+- **godot/godot_api** looks up the exact engine API of the Godot version the project uses, read from that Godot
+  executable: class overviews, signatures (inherited members too), properties, signals, enums and theme items.
+  Godot 3 names point to their replacement (`KinematicBody2D` -> `CharacterBody2D`, `instance` ->
+  `instantiate`). `--describe` adds the official description and deprecation notes for the matching version tag.
+  The first lookup per Godot version takes a few seconds; later ones read a cached index.
+- **godot-index** has a `godot_api` tool for the same lookups (about 790 tokens for all five tools), and reports
+  the plugin's version instead of 0.1.0.
+
 ## 0.12.0 (2026-11-16)
 
 - **godot/pck_size** shows what makes a build big: sizes by source folder, by kind and the largest files, read
