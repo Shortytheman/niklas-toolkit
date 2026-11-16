@@ -1,6 +1,6 @@
 {
   "name": "core",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "General tools used in every project: verify, learn, handoff.",
   "author": {
     "name": "Niklas"

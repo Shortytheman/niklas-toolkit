@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 (2026-11-16)
+
+- **deps/fix_deps**: also fixes projects that use a lockfile with a manifest: raises the lower bound in
+  `pyproject.toml` (PEP 508 strings and Poetry tables, upper bounds respected) and sets the requirement in
+  `Cargo.toml`, then prints the command that regenerates `uv.lock`, `poetry.lock`, `Cargo.lock` or the npm
+  lockfile.
+
 ## 0.6.0 (2026-11-16)
 
 - **core/release**: drafts the changelog from the commits since the last tag (conventional commits or plain
