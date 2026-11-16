@@ -389,6 +389,11 @@ def test_schedule_launcher_runs_newest_installed_version(tmp_path, monkeypatch):
     log = (home / "briefs" / "last-run.log").read_text(encoding="utf-8")
     assert "new ['--save']" in log and "0.11.0" in log
 
+    # A version Claude Code has marked as replaced loses to one still installed, even if its number is higher.
+    (cache / "0.11.0" / ".orphaned_at").write_text("1", encoding="utf-8")
+    assert subprocess.run([sys.executable, str(launcher)]).returncode == 0
+    assert "middle ['--save']" in (home / "briefs" / "last-run.log").read_text(encoding="utf-8")
+
     # A source checkout (not under plugins/cache) is used as it is.
     checkout = tmp_path / "repo" / "packs" / "brief" / "scripts" / "brief.py"
     checkout.parent.mkdir(parents=True)

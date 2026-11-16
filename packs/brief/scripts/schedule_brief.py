@@ -45,9 +45,10 @@ def newest():
     found = []
     for p in FALLBACK.parents[2].glob("*/scripts/brief.py"):
         m = re.fullmatch(r"(\\d+)\\.(\\d+)\\.(\\d+)", p.parents[1].name)
-        if m:
-            found.append((tuple(int(x) for x in m.groups()), str(p)))
-    return Path(max(found)[1]) if found else FALLBACK
+        if m:   # Claude Code marks replaced versions with .orphaned_at before deleting them
+            current = not (p.parents[1] / ".orphaned_at").exists()
+            found.append((current, tuple(int(x) for x in m.groups()), str(p)))
+    return Path(max(found)[2]) if found else FALLBACK
 
 
 log_dir = Path(__file__).resolve().parent / "briefs"
