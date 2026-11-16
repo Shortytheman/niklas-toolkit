@@ -24,7 +24,8 @@ def make_project(tmp_path):
         'const B = "res://art/%s.png"\n'            # built at runtime: not checked
         'const C = "res://art/"\n'                  # folder prefix: not checked
         '# "res://commented/out.png"\n'             # still a reference, but commented: reported as broken
-        'var t = load("uid://nobody01")\n', encoding="utf-8")
+        'var t = load("uid://nobody01")\n'
+        'var bb = "[img=16]res://art/enemy.png[/img] gold"\n', encoding="utf-8")  # BBCode: path ends at [
     return tmp_path
 
 

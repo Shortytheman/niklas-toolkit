@@ -23,7 +23,7 @@ RESOURCE_EXTS = {".tscn", ".tres", ".gd", ".gdshader", ".png", ".jpg", ".jpeg", 
                  ".mp3", ".ttf", ".otf", ".woff", ".woff2", ".glb", ".gltf", ".obj", ".fbx", ".csv", ".json"}
 SKIP_DIRS = {".godot", ".git", ".import", "__pycache__", "node_modules"}
 
-RES_PATH = re.compile(r"res://[^\"'\s)\]}>,;]+")
+RES_PATH = re.compile(r"res://[^\"'\s()\[\]{}<>,;|]+")  # stops at BBCode too: [img]res://x.png[/img]
 UID_REF = re.compile(r"uid://[a-z0-9]+")
 WORD = re.compile(r"\b\w+\b")
 DYNAMIC_PREFIX = re.compile(r"[\"'](res://[^\"'%{}]*?/)(?:[^\"'/]*%[sd]|[^\"'/]*\{)|[\"'](res://[^\"']*/)[\"']\s*\+")
@@ -96,7 +96,10 @@ class Index:
             except OSError:
                 continue
             lines = text.splitlines()
+            is_gd = f.suffix == ".gd"
             for n, line in enumerate(lines, 1):
+                if is_gd and line.lstrip().startswith("#"):
+                    continue  # a path in a GDScript comment is not a use
                 targets = set(RES_PATH.findall(line))
                 targets.update(self.uid_to_res[u] for u in UID_REF.findall(line) if u in self.uid_to_res)
                 if line.lstrip().startswith("[gd_scene") or line.lstrip().startswith("[gd_resource"):
