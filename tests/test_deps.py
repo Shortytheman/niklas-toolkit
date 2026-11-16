@@ -232,3 +232,54 @@ def test_deps_hook_reports_only_new(osv_net, tmp_path):
     (repo / "requirements.txt").write_text("safe==1.0\nrequests==2.25.0\n", encoding="utf-8")
     assert deps_hook.main(["--file", str(repo / "requirements.txt")]) == 2
     assert deps_hook.main(["--file", str(repo / "notes.txt")]) == 0
+
+
+def test_edit_requirements_keeps_extras_markers_comments(tmp_path):
+    import fix_deps
+    req = tmp_path / "requirements.txt"
+    req.write_text("Requests[socks] == 2.25.0 ; python_version > '3.8'  # http\nother==1.0\n", encoding="utf-8")
+    assert fix_deps.edit_requirements(req, "requests", "2.32.0")
+    assert req.read_text(encoding="utf-8") == \
+        "Requests[socks] == 2.32.0 ; python_version > '3.8'  # http\nother==1.0\n"
+    assert not fix_deps.edit_requirements(req, "absent", "1.0")
+
+
+def test_edit_package_json_keeps_operator_and_layout(tmp_path):
+    import fix_deps
+    pj = tmp_path / "package.json"
+    pj.write_text('{\n  "dependencies": {\n    "lodash": "^4.17.15",\n    "x": "github:a/b"\n  },\n'
+                  '  "devDependencies": {"ts": "5.0.0"}\n}\n', encoding="utf-8")
+    assert fix_deps.edit_package_json(pj, "lodash", "4.18.0")
+    assert fix_deps.edit_package_json(pj, "ts", "5.1.0")
+    assert not fix_deps.edit_package_json(pj, "x", "2.0.0")     # not a version spec: left alone
+    assert pj.read_text(encoding="utf-8") == ('{\n  "dependencies": {\n    "lodash": "^4.18.0",\n    "x": "github:a/b"\n'
+                                              '  },\n  "devDependencies": {"ts": "5.1.0"}\n}\n')
+
+
+def test_fix_deps_dry_run_and_apply(osv_net, tmp_path, capsys):
+    import fix_deps
+    proj = tmp_path / "p"
+    proj.mkdir()
+    (proj / "requirements.txt").write_text("requests==2.25.0\n", encoding="utf-8")
+    assert fix_deps.main([str(proj)]) == 1
+    assert "Would edit:" in capsys.readouterr().out
+    assert (proj / "requirements.txt").read_text(encoding="utf-8") == "requests==2.25.0\n"   # dry run
+    assert fix_deps.main([str(proj), "--apply"]) == 0
+    assert (proj / "requirements.txt").read_text(encoding="utf-8") == "requests==2.32.0\n"
+
+
+def test_fix_deps_major_guard_and_same_major(monkeypatch, tmp_path, capsys):
+    import fix_deps
+    net = install(monkeypatch, tmp_path)
+    net.add("/v1/querybatch", lambda req: (200, {}, json.dumps({"results": [{"vulns": [{"id": "A"}, {"id": "B"}]}]}).encode()))
+    net.add("/v1/vulns/A", {"id": "A", "affected": [{"package": {"ecosystem": "PyPI"}, "ranges": [{"events": [{"fixed": "1.26.19"}, {"fixed": "2.2.2"}]}]}]})
+    net.add("/v1/vulns/B", {"id": "B", "affected": [{"package": {"ecosystem": "PyPI"}, "ranges": [{"events": [{"fixed": "2.6.0"}]}]}]})
+    proj = tmp_path / "p"
+    proj.mkdir()
+    (proj / "requirements.txt").write_text("urllib3==1.26.4\n", encoding="utf-8")
+    assert fix_deps.main([str(proj), "--apply"]) == 1
+    out = capsys.readouterr().out
+    assert "urllib3 1.26.4 -> 2.6.0 (major)" in out and "1.26.19 fixes 1 of 2" in out
+    assert (proj / "requirements.txt").read_text(encoding="utf-8") == "urllib3==1.26.4\n"
+    assert fix_deps.main([str(proj), "--apply", "--allow-major"]) == 0
+    assert (proj / "requirements.txt").read_text(encoding="utf-8") == "urllib3==2.6.0\n"

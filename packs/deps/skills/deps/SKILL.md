@@ -27,14 +27,22 @@ versions that fix it, and the lowest version that fixes all of them ("upgrading 
 - Packages without an exact version (ranges in `pyproject.toml` or `package.json` with no lockfile) are listed as
   "not checked": suggest a lockfile rather than guessing the installed version.
 
-When fixing:
+When fixing, plan with `fix_deps.py` first:
 
-1. Upgrade direct dependencies to the version the audit names, in the manifest and the lockfile, using the
-   project's own tool (`pip install -U`, `npm install x@ver`, `cargo update -p`, `uv lock --upgrade-package`).
-2. For a transitive package, upgrade the direct dependency that pulls it in, or use the ecosystem's override
-   mechanism (`overrides` in package.json, a constraint in requirements) and say so.
-3. Check major jumps with `outdated.py` and the changelog before applying them, then run the project's checks
-   (the verify skill from the core pack, if installed) and the audit again.
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/fix_deps.py" "<project>"            # dry run: what would change
+python "${CLAUDE_PLUGIN_ROOT}/scripts/fix_deps.py" "<project>" --apply    # write the safe edits
+```
+
+1. It edits `requirements*.txt` pins and `package.json` specs (keeping `^`/`~`) to the lowest version that fixes
+   everything, and prints the right command for lockfiles, transitive packages and other ecosystems. Show the
+   user the dry run before `--apply` when the change is more than a few patch upgrades.
+2. Major upgrades are not applied without `--allow-major`; the plan says which version on the current major
+   line fixes how many advisories, which is often the safer first step. Read the changelog before crossing a
+   major version, and ask the user.
+3. After editing, regenerate the lockfile with the project's own tool (`uv lock`, `pip-compile`, `npm install`,
+   `cargo update`), run the project's checks (the verify skill from the core pack, if installed), and run
+   `dep_audit.py` again to confirm.
 4. A finding that does not apply (code path unused, fix impossible) can be accepted in `toolkit.json`:
    `{"deps": {"ignore": ["GHSA-xxxx-xxxx-xxxx"]}}`. Only add it when the user agrees, with the reason.
 

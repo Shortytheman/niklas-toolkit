@@ -6,7 +6,7 @@ new releases, from the user's config. Each section fails on its own: one dead so
     python brief.py --only weather news   just these
 
 config.json "brief": {"sections": [...]} sets the default order. Sections:
-    weather, holidays, fx, crypto, stocks, portfolio, news, releases
+    weather, holidays, fx, crypto, stocks, portfolio, news, releases, inflation (Danish CPI)
 A section with nothing configured (no watchlist, no feeds) is skipped quietly.
 
 Exit codes: 0 brief printed (even if some sections failed), 2 setup problem in the config file itself.
@@ -23,7 +23,7 @@ import netlib  # noqa: E402
 from common import DISCLAIMER, SetupError, base_currency, fmt_money, fmt_pct, fmt_time, run_main, settings  # noqa: E402
 
 DEFAULT_SECTIONS = ["weather", "holidays", "fx", "crypto", "stocks", "portfolio", "news", "releases"]
-MARKET_SECTIONS = {"fx", "crypto", "stocks", "portfolio"}
+MARKET_SECTIONS = {"fx", "crypto", "stocks", "portfolio", "inflation"}
 
 
 def section_weather(cfg: dict) -> list[str]:
@@ -120,7 +120,19 @@ def section_releases(cfg: dict) -> list[str]:
     return ["New releases (7 days):"] + [f"  {r['repo']} {r['title']}  {news.ago(r['date'])}" for r in found]
 
 
-SECTIONS = {"weather": section_weather, "holidays": section_holidays, "fx": section_fx, "crypto": section_crypto,
+def section_inflation(cfg: dict) -> list[str]:
+    import dk_stats
+    table, sel, _, _ = dk_stats.PRESETS["inflation"]
+    _, rows = dk_stats.fetch(table, sel, 2)
+    values = [(r["TID"], dk_stats.number(r["INDHOLD"])) for r in rows if dk_stats.number(r["INDHOLD"]) is not None]
+    if not values:
+        return []
+    (prev_t, prev), (last_t, last) = (values[-2] if len(values) > 1 else values[-1]), values[-1]
+    return [f"Danish inflation: {last:.1f}% in {last_t} (year on year; {prev:.1f}% in {prev_t})  "
+            f"({dk_stats.ATTRIBUTION.replace('Source: ', '')})"]
+
+
+SECTIONS = {"weather": section_weather, "inflation": section_inflation, "holidays": section_holidays, "fx": section_fx, "crypto": section_crypto,
             "stocks": section_stocks, "portfolio": section_portfolio, "news": section_news,
             "releases": section_releases}
 

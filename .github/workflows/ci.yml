@@ -19,6 +19,10 @@ jobs:
           for pack in packs/*/; do
             claude plugin validate --strict "$pack"
           done
+      - name: Docs links and script paths
+        run: python3 packs/core/scripts/docs_check.py .
+      - name: Risk scan of the packs
+        run: python3 packs/audit/scripts/plugin_scan.py $(for p in packs/*/; do printf -- '--path %s ' "$p"; done)
 
   test:
     name: Script tests (Python ${{ matrix.python }})

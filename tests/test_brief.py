@@ -202,3 +202,62 @@ def test_brief_survives_a_failing_section(net, tmp_path, capsys, monkeypatch):
     assert "Next holiday:" in out and "DKK: EUR 7.4756" in out
     assert "crypto: unavailable" in out
     assert common.DISCLAIMER in out
+
+
+PRIS01_INFO = {"id": "PRIS01", "text": "Consumer price index", "unit": "-", "updated": "2026-11-10T08:00:00",
+               "active": True, "variables": [
+                   {"id": "VAREGR", "text": "commodity group", "elimination": True, "time": False,
+                    "values": [{"id": "000000", "text": "00 Consumer price index, total"}]},
+                   {"id": "ENHED", "text": "unit", "elimination": False, "time": False,
+                    "values": [{"id": "100", "text": "Index"}, {"id": "300", "text": "Percentage change y/y"}]},
+                   {"id": "Tid", "text": "time", "elimination": False, "time": True,
+                    "values": [{"id": "2026M08", "text": "2026M08"}]}]}
+PRIS01_CSV = ("﻿VAREGR;ENHED;TID;INDHOLD\n"
+              "00 total;Percentage change y/y;2026M07;1.70\n00 total;Percentage change y/y;2026M08;2.00\n"
+              "00 total;Percentage change y/y;2026M09;..\n00 total;Percentage change y/y;2026M10;2.20\n")
+
+
+@pytest.fixture
+def statbank(net):
+    net.add("api.statbank.dk/v1/tableinfo/PRIS01", PRIS01_INFO)
+    net.add("api.statbank.dk/v1/tableinfo/NOPE", (400, {}, b'{"message":"table not found"}'))
+    net.add("api.statbank.dk/v1/data", lambda req: (200, {}, PRIS01_CSV.encode()))
+    net.add("api.statbank.dk/v1/tables", [{"id": "AUF01", "text": "Unemployed persons (provisional)", "active": True,
+                                           "variables": ["region", "time"]},
+                                          {"id": "PRIS113", "text": "Consumer price index", "active": False,
+                                           "variables": ["type", "time"]}])
+    return net
+
+
+def test_dk_stats_fetch(statbank):
+    import dk_stats
+    meta, rows = dk_stats.fetch("PRIS01", {"VAREGR": "000000", "ENHED": "300"}, 3)
+    assert [r["TID"] for r in rows] == ["2026M08", "2026M09", "2026M10"]
+    assert [dk_stats.number(r["INDHOLD"]) for r in rows] == [2.0, None, 2.2]   # ".." is missing
+    body = json.loads(next(d for m, u, d, h in statbank.calls if u.endswith("/v1/data")))
+    assert {"code": "Tid", "values": ["*"]} in body["variables"]
+
+
+def test_dk_stats_errors(statbank):
+    import dk_stats
+    with pytest.raises(common.SetupError, match="needs a value for ENHED"):
+        dk_stats.fetch("PRIS01", {}, 3)
+    with pytest.raises(common.SetupError, match="unknown code"):
+        dk_stats.fetch("PRIS01", {"ENHED": "999"}, 3)
+    with pytest.raises(common.SetupError, match="no table called NOPE"):
+        dk_stats.fetch("NOPE", {}, 3)
+
+
+def test_dk_stats_search(statbank, capsys, monkeypatch):
+    import dk_stats
+    monkeypatch.setattr(sys, "argv", ["dk_stats.py", "search", "consumer"])
+    assert dk_stats.main() == 0
+    out = capsys.readouterr().out
+    assert "PRIS113" in out and "no longer updated" in out and "AUF01" not in out
+
+
+def test_brief_inflation_section(statbank, tmp_path, capsys, monkeypatch):
+    import brief
+    monkeypatch.setattr(sys, "argv", ["brief.py", "--only", "inflation"])
+    assert brief.main() == 0
+    assert "Danish inflation: 2.2% in 2026M10" in capsys.readouterr().out

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0 (2026-11-16)
+
+- **core/docs-check**: broken relative links (with exact letter case), missing anchors (GitHub slugs), script
+  paths in code blocks that no longer exist, and dead web links with `--external`. Checks only files git tracks.
+- **deps/fix_deps**: plans the upgrades that fix known vulnerabilities, applies them to `requirements*.txt` and
+  `package.json` with `--apply`, prints the command for everything else, and holds back major upgrades while
+  naming the best fix on the current major line.
+- **audit/plugin_scan**: static risk scan of installed plugins or a folder before installing it.
+- **audit/context_cost --measure-mcp**: starts stdio MCP servers and counts their tool definitions; MCP servers
+  from `.mcp.json` and the user config are listed too.
+- **brief/dk_stats**: Statistics Denmark (no key): inflation, CPI and population shortcuts, table search, any
+  table; an optional `inflation` section in the brief.
+
 ## 0.4.0 (2026-11-16)
 
 Three new packs, chosen from research into the Claude Code plugin landscape and free data APIs.

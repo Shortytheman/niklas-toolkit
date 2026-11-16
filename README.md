@@ -37,6 +37,7 @@ much). To try a pack from a local checkout: `claude --plugin-dir ./packs/deps`.
 | `verify` | script + skill | Runs the project's checks (from `toolkit.json`, or detected: npm, pytest, cargo, go, make) with one `PASS`/`FAIL` line each |
 | `learn` | skill | Turns a repeated correction into a permanent rule in the right place (project `CLAUDE.md`, global, a skill, or this toolkit) |
 | `handoff` | skill | Saves the state of unfinished work to `.claude/handoff.md` and resumes from it in the next session |
+| `docs-check` | script + skill | Broken relative links (letter case included), missing `#anchors`, script paths in code blocks that no longer exist, and with `--external` dead web links |
 | `reviewer` | agent | Reviews a finished diff in a fresh context for bugs, missed callers and broken project rules, and confirms each finding before reporting it |
 
 ### `deps`: dependency health, any language
@@ -44,6 +45,7 @@ much). To try a pack from a local checkout: `claude --plugin-dir ./packs/deps`.
 | Tool | Kind | What it does |
 | --- | --- | --- |
 | `dep_audit` | script + skill | Known vulnerabilities from OSV.dev (no key) for PyPI, npm, crates.io, Go, Packagist and RubyGems lockfiles: severity with CVSS 3.x score, CVE, fixed versions, and the lowest version that fixes them all |
+| `fix_deps` | script + skill | Plans the upgrades that fix them (dry run), and with `--apply` edits `requirements*.txt` and `package.json`; prints the right command for lockfiles and other ecosystems; holds back major upgrades and names the safest fix on the current major line |
 | `outdated` | script + skill | Newer releases of direct dependencies, sorted major / minor / patch |
 | `licenses` | script + skill | License inventory: permissive, weak copyleft, copyleft, unknown; `--fail-on copyleft` for CI |
 | dependency hook | hook | After an edit to a lockfile or requirements file, reports only the vulnerabilities that edit introduced, compared with git HEAD |
@@ -60,6 +62,7 @@ Reads `requirements*.txt`, `poetry.lock`, `uv.lock`, `Pipfile.lock`, `pdm.lock`,
 | `weather` | script | Now and the next days, from Open-Meteo |
 | `news` | script | Hacker News top stories, your RSS/Atom feeds, and new GitHub releases (via `releases.atom`, no API limit) |
 | `holidays_dk` | script | Danish public holidays computed offline from Easter, and working days in a period |
+| `dk_stats` | script | Statistics Denmark without a key: inflation, CPI, population shortcuts, plus search, table info and any table |
 | `fx` | script + `markets` skill | Exchange rates and history from the ECB (fallback Frankfurter) |
 | `crypto` | script + `markets` skill | Prices and history from CoinGecko (fallback Kraken) |
 | `stocks` | script + `markets` skill | Quotes and history with your own free Finnhub or Tiingo key; Nordic tickers like `NOVO-B.CO` through an opt-in, clearly labelled unofficial Yahoo source |
@@ -77,7 +80,8 @@ creates it): location, currency, watchlists, feeds, repos and keys.
 
 | Tool | Kind | What it does |
 | --- | --- | --- |
-| `context_cost` | script + skill | Tokens that skills, agents, commands and CLAUDE.md files load into every session, per plugin |
+| `context_cost` | script + skill | Tokens that skills, agents, commands and CLAUDE.md files load into every session, per plugin; `--measure-mcp` starts each stdio MCP server and counts its tool definitions too |
+| `plugin_scan` | script + skill | Static risk scan of installed plugins, or a folder before you install it: download-and-run, obfuscated code, access to keys and browser data, destructive deletes, network hooks, skill text that steers Claude to hide things or skip permissions |
 | `skill_usage` | script + skill | Which skills and agents your local session logs show in use, and which never fire |
 | `hook_doctor` | script + skill | Hooks that will fail: missing programs, the Windows `python3` Store placeholder, missing scripts, CRLF `.sh` files, bad matchers |
 

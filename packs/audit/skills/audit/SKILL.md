@@ -12,7 +12,12 @@ nothing anywhere.
 python "${CLAUDE_PLUGIN_ROOT}/scripts/context_cost.py" "<project>"   # tokens per plugin, largest items
 python "${CLAUDE_PLUGIN_ROOT}/scripts/skill_usage.py" "<project>" --days 30   # used vs never used
 python "${CLAUDE_PLUGIN_ROOT}/scripts/hook_doctor.py" "<project>"    # hooks that will fail, and why
+python "${CLAUDE_PLUGIN_ROOT}/scripts/plugin_scan.py" "<project>"    # risky patterns in installed plugins
+python "${CLAUDE_PLUGIN_ROOT}/scripts/plugin_scan.py" --path <dir>   # a plugin before installing it
 ```
+
+`context_cost.py --measure-mcp` also starts each configured stdio MCP server and counts the tokens of its tool
+definitions. That runs the servers' programs: ask the user first, unless they asked for the measurement.
 
 ## Reading the results
 
@@ -25,6 +30,12 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/hook_doctor.py" "<project>"    # hooks tha
 - **hook_doctor** names the hook, where it is configured, and the fix. `store-python` means `python3` opens the
   Microsoft Store: the fix is installing Python or turning off the alias (Settings > Apps > Advanced app settings
   > App execution aliases). `crlf-script` means a `.sh` file has Windows line endings.
+
+- **plugin_scan** lists download-and-run commands, obfuscated code, access to SSH keys, credentials or browser
+  data, destructive deletes, hooks that use the network, environment dumps, and skill text that steers Claude
+  to hide things from the user or skip permission prompts. A finding is a reason to read the file, not proof of
+  bad intent: open the file, explain what the code does, and let the user decide. Findings marked "declared
+  pattern file" come from security tools that spell out the patterns they search for.
 
 ## Acting on it
 

@@ -14,6 +14,7 @@ All scripts are in `${CLAUDE_PLUGIN_ROOT}/scripts/` and need no API keys:
 | Hacker News, feeds, GitHub releases | `python news.py [--hn 10] [--feeds] [--releases]` |
 | Danish holidays | `python holidays_dk.py [year]` |
 | Working days in a period | `python holidays_dk.py --workdays 2026-12-01 2026-12-31` |
+| Danish statistics (inflation, population, any table) | `python dk_stats.py inflation`, `search <words>`, `info <TABLE>`, `get <TABLE> VAR=code` |
 | See or create the settings | `python brief_config.py [--init]` |
 
 Settings live in one personal file outside any project (`brief_config.py` prints where): location, base
