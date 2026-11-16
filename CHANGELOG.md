@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0 (2026-11-16)
+
+- **brief/fred**: economic series from FRED (interest rates, inflation, jobs) with your own free key, series
+  search, and FRED's required notice on every output.
+- **Fixed**: `fix_deps` and `release_notes --write` kept files' content but turned Windows (CRLF) line endings
+  into LF, so git showed every line as changed. Line endings are now preserved.
+- Skill descriptions are shorter and name every tool their skill covers (all five packs: about 1,200 tokens per
+  session in total).
+
 ## 0.9.0 (2026-11-16)
 
 - **brief/dmi --forecast**: DMI's own HARMONIE forecast for a point, the next hours and a summary per day

@@ -1,6 +1,6 @@
 {
   "name": "audit",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Audit your Claude Code setup: how many tokens installed skills, agents and CLAUDE.md files cost every session, which skills never fire, and hooks that will fail (Windows-aware). Local and read-only.",
   "author": {
     "name": "Niklas"
