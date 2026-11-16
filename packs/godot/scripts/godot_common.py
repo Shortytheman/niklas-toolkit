@@ -207,6 +207,24 @@ def _location(context: list[str]) -> list[str]:
     return [line for line in context if line.startswith("at:")][:1]
 
 
+INTERRUPTED_NOTE = "probably cut off: the run ended during a background load; run more frames to check"
+EMPTY_PARSE_ERROR = re.compile(r"Parse Error: \.?$")
+LOAD_FAILURE = re.compile(r"Parse Error: (\.?|Failed\..*)$|^Failed loading resource: ")
+
+
+def _mark_interrupted_loads(problems: list[Problem]) -> None:
+    """Quitting while ResourceLoader.load_threaded_request() is still reading makes Godot report the half-read
+    files as 'Parse Error: .', with no detail, plus 'Failed loading resource' for them and their dependents.
+    A real parse error always says what is wrong. When such empty parse errors show up, the whole group is
+    turned into warnings with a note, so a short run does not report false errors."""
+    if not any(p.kind == "error" and EMPTY_PARSE_ERROR.search(p.message) for p in problems):
+        return
+    for p in problems:
+        if p.kind == "error" and LOAD_FAILURE.search(p.message):
+            p.kind = "warning"
+            p.context = [*p.context, INTERRUPTED_NOTE]
+
+
 def digest_log(text: str, ignore: list[str] | None = None) -> list[Problem]:
     """Errors and warnings from a Godot log with their project locations; repeats are merged and counted.
 
@@ -231,6 +249,7 @@ def digest_log(text: str, ignore: list[str] | None = None) -> list[Problem]:
     for p in problems:
         p.context = _location(raw_context[id(p)])
     problems = [p for p in problems if not any(r.search(p.message) for r in ignore_re)]
+    _mark_interrupted_loads(problems)
     merged: list[Problem] = []
     for p in problems:
         key = (p.kind, p.message, "|".join(p.context))

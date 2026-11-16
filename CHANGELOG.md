@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 (2026-11-16)
+
+- `screenshot --steps`: drive the UI with real mouse and key events (`click`, `hover`, `key`, `wait`, `waitfor`,
+  `shot`) to capture screens behind menus. Controls are found by their on-screen (translated) text, node name or
+  path. A failed step saves the screen and lists the visible buttons.
+- `run` and `screenshot`: a short run that ends while the game is still loading resources in the background no
+  longer reports the half-read files as parse errors; they show as warnings with a hint to run more frames.
+- `doctor`: paths inside BBCode and GDScript comments are handled correctly; a bad `toolkit.json` gives a clean
+  error.
+- CI: actions on Node 24, runner pinned to Ubuntu 24.04.
+
 ## 0.1.0 (2026-11-15)
 
 First release.

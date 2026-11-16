@@ -9,6 +9,14 @@ Runs without Claude. Standard library only. A game window opens briefly; headles
 Frames are counted from the first frame the scene is running. The game's own code is not changed: the capture
 logic is capture.gd, loaded as the main loop with --script.
 
+--steps drives the UI with real mouse and key events to reach screens behind menus, saving named shots:
+
+    python screenshot.py <project> --steps "click:Settings; wait:20; shot:settings; key:Escape; shot:back"
+
+Actions: wait:<frames>, click:<control>, hover:<control>, key:<key>, waitfor:<control>, shot:<name>.
+A control is found by its button or label text, its node name, or its node path from the root. When a step
+fails, the run stops, saves shot_failed_stepNN.png and lists the visible buttons.
+
 Saves and settings go to a sandbox (<project>/.godot/toolkit/userdata) unless --real-user-data is given, so the
 run never touches the developer's real save files.
 
@@ -39,6 +47,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("project", nargs="?", default=".", help="project folder or any folder inside it (default: .)")
     ap.add_argument("--scene", help="scene to run (default: main scene)")
     ap.add_argument("--frames", default="60", help="comma-separated frames to save (default 60)")
+    ap.add_argument("--steps", help='drive the UI, e.g. "click:Settings; wait:20; shot:settings" '
+                                    "(actions: wait, click, hover, key, waitfor, shot); replaces --frames")
     ap.add_argument("--out", help="output folder (default: <project>/.godot/toolkit/shots)")
     ap.add_argument("--max-width", type=int, default=1280, help="downscale wider frames (default 1280, 0 = full)")
     ap.add_argument("--timeout", type=int, default=180, help="seconds before the run is killed (default 180)")
@@ -68,26 +78,37 @@ def run(args: argparse.Namespace, game_args: list[str]) -> int:
     if not scene:
         raise SetupError("no main scene in project.godot; pass --scene res://path.tscn")
 
+    steps = parse_steps(args.steps) if args.steps else []
+
     out_dir = Path(args.out).resolve() if args.out else project / ".godot" / "toolkit" / "shots"
     if out_dir.exists():
         for old in out_dir.glob("shot_*.png"):
             old.unlink()
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    mode = ["--steps", "; ".join(steps)] if steps else ["--frames", ",".join(map(str, frames))]
     cmd = ["--path", str(project), "--script", str(CAPTURE), "--",
-           "--scene", scene, "--frames", ",".join(map(str, frames)), "--out", str(out_dir),
-           "--max-width", str(args.max_width), *game_args]
+           "--scene", scene, *mode, "--out", str(out_dir), "--max-width", str(args.max_width), *game_args]
     env = None if args.real_user_data else sandbox_env(project)
     out = run_godot(godot, cmd, args.timeout, env=env)
     (out_dir / "capture.log").write_text(out.text, encoding="utf-8")
 
-    saved = [out_dir / f"shot_{f:05d}.png" for f in frames]
+    if steps:
+        expected = [s.split(":", 1)[1].strip() or f"step{i + 1:02d}" for i, s in enumerate(steps)
+                    if s.split(":", 1)[0].strip().lower() == "shot"]
+        saved = [out_dir / f"shot_{name}.png" for name in expected]
+        what = f"{len(steps)} step(s)"
+    else:
+        saved = [out_dir / f"shot_{f:05d}.png" for f in frames]
+        what = f"frames {frames}"
     missing = [p for p in saved if not p.is_file()]
+    failed_shots = sorted(out_dir.glob("shot_failed_step*.png"))
     problems = digest_log(out.text, ignore)
     errors = [p for p in problems if p.kind == "error" and "capture.gd" not in p.message]
+    step_failed = bool(steps) and (out.code != 0 or bool(failed_shots))
 
     status = "TIMED OUT" if out.timed_out else f"exit {out.code}"
-    print(f"{info.name}: {scene} frames {frames}  |  {status} in {out.seconds:.1f}s  |  "
+    print(f"{info.name}: {scene} {what}  |  {status} in {out.seconds:.1f}s  |  "
           f"{len(saved) - len(missing)}/{len(saved)} saved, {sum(p.count for p in errors)} error(s)")
     for p in saved:
         if p.is_file():
@@ -96,12 +117,40 @@ def run(args: argparse.Namespace, game_args: list[str]) -> int:
         print(f"  MISSING {p.name}")
     for p in errors[:10]:
         print(p.render())
-    if missing:
-        fails = [l for l in out.text.splitlines() if "capture.gd" in l]
-        if fails:
-            print("\n".join(fails[-5:]))
+    if step_failed or missing:
+        lines = out.text.splitlines()
+        start = next((i for i, l in enumerate(lines) if "failed:" in l and "capture.gd" in l), None)
+        if start is not None:  # the failing step and the list of visible buttons that follows it
+            block = [lines[start]] + [l for l in lines[start + 1:start + 45]
+                                     if (l.startswith("  ") and not l.strip().startswith("at:"))
+                                     or "visible buttons" in l]
+            print("\n".join(block))
+        else:
+            print("\n".join([l for l in lines if "capture.gd" in l][-5:]))
+        for p in failed_shots:
+            print(f"  screen at the failure: {p}")
     print(f"Log: {out_dir / 'capture.log'}")
-    return 1 if missing or errors or out.timed_out else 0
+    return 1 if missing or errors or out.timed_out or step_failed else 0
+
+
+STEP_ACTIONS = {"wait", "click", "hover", "key", "waitfor", "shot"}
+
+
+def parse_steps(text: str) -> list[str]:
+    """'click:Start; wait:30; shot:menu' -> checked list of steps."""
+    steps = [s.strip() for s in text.split(";") if s.strip()]
+    for s in steps:
+        action, _, arg = s.partition(":")
+        action, arg = action.strip().lower(), arg.strip()
+        if action not in STEP_ACTIONS:
+            raise SetupError(f"unknown step '{s}'; use {', '.join(sorted(STEP_ACTIONS))}")
+        if action == "wait" and not arg.isdigit():
+            raise SetupError(f"'{s}': wait needs a number of frames, e.g. wait:30")
+        if action in ("click", "hover", "key", "waitfor") and not arg:
+            raise SetupError(f"'{s}': {action} needs a target, e.g. {action}:Start")
+        if action == "shot" and arg and not all(c.isalnum() or c in "-_" for c in arg):
+            raise SetupError(f"'{s}': shot names use letters, digits, - and _ only")
+    return steps
 
 
 if __name__ == "__main__":

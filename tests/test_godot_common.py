@@ -108,3 +108,27 @@ def test_digest_ignore_patterns():
 def test_render_shows_count():
     p = digest_log(RUN_LOG)[0]
     assert p.render().splitlines() == ["ERROR: deliberate error from main.gd  (x2)", "    res://main.gd:9 in _ready"]
+
+
+INTERRUPTED_LOG = """\
+ERROR: res://resources/tilesets/decorations.tres:35 - Parse Error: .
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: Failed loading resource: res://resources/tilesets/decorations.tres.
+   at: _load (core/io/resource_loader.cpp:317)
+ERROR: Parse Error: Failed. [Resource file res://src/map/buildable_area.tscn:9]
+   at: _parse_node_tag (scene/resources/resource_format_text.cpp:293)
+ERROR: deliberate error from main.gd
+       [0] _ready (res://main.gd:9)
+"""
+
+
+def test_interrupted_background_load_becomes_warnings():
+    problems = digest_log(INTERRUPTED_LOG)
+    assert [p.kind for p in problems] == ["warning", "warning", "warning", "error"]
+    assert "run more frames" in problems[0].context[-1]
+    assert problems[3].message == "deliberate error from main.gd"  # unrelated errors stay errors
+
+
+def test_real_parse_error_stays_an_error():
+    problems = digest_log("ERROR: res://x.tscn:3 - Parse Error: Expected '='\nERROR: Failed loading resource: res://x.tscn.\n")
+    assert [p.kind for p in problems] == ["error", "error"]

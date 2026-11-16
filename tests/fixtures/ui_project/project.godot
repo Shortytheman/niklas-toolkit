@@ -1,0 +1,14 @@
+; Engine configuration file.
+config_version=5
+
+[application]
+
+config/name="UI Project"
+config/version="0.1.0"
+run/main_scene="res://menu.tscn"
+config/features=PackedStringArray("4.7")
+
+[display]
+
+window/size/viewport_width=640
+window/size/viewport_height=360

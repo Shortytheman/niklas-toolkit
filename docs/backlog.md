@@ -5,12 +5,10 @@ Ideas and fixes waiting for real use to justify them. The `learn` skill adds lin
 - Godot test runner (GUT or gdUnit4): build when a project adopts one of them.
 - `export`: an option to tag the release in git and write the zip's checksum.
 - `doctor`: report scripts whose `class_name` collides with another, and `.import` files whose source is gone.
-- `screenshot`: drive input (click a button, press a key) before capturing, so screens behind menus can be reached.
-- Demo recording for the README and a first version tag.
+- `screenshot --steps`: pick the n-th of several buttons without text (e.g. a grid of tower icons).
+- Demo recording for the README.
 
 ## Done
 
-- Project doctor (2026-11-15)
-- Scene rules skill (2026-11-15)
-- `core/verify` and `core/handoff` skills, `reviewer` agent (2026-11-15)
-- Pack icons (2026-11-15), drawn by `tools/make_icons.py`
+- `screenshot --steps`: click, hover, keys and waits to reach screens behind menus (0.2.0)
+- Project doctor, scene rules, `verify`, `handoff`, `reviewer`, pack icons (0.1.0)

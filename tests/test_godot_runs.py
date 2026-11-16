@@ -44,3 +44,22 @@ def test_screenshot(project_copy):
     assert screenshot.main([str(project), "--frames", "3,6"]) == 0
     shots = sorted(p.name for p in (project / ".godot" / "toolkit" / "shots").glob("shot_*.png"))
     assert shots == ["shot_00003.png", "shot_00006.png"]
+
+
+@pytest.mark.skipif(os.environ.get("CI") == "true", reason="needs a display to render")
+def test_screenshot_steps_drive_the_ui(project_copy, capsys):
+    project = project_copy("ui_project")
+    steps = "click:Open settings; waitfor:Settings are open; shot:open; key:Escape; wait:5; shot:closed"
+    assert screenshot.main([str(project), "--steps", steps]) == 0
+    shots = project / ".godot" / "toolkit" / "shots"
+    assert (shots / "shot_open.png").is_file() and (shots / "shot_closed.png").is_file()
+    assert "settings closed" in (shots / "capture.log").read_text(encoding="utf-8")
+
+
+@pytest.mark.skipif(os.environ.get("CI") == "true", reason="needs a display to render")
+def test_screenshot_failed_step_lists_buttons(project_copy, capsys):
+    project = project_copy("ui_project")
+    assert screenshot.main([str(project), "--steps", "click:Nope; shot:never"]) == 1
+    out = capsys.readouterr().out
+    assert 'OpenButton "Open settings"' in out
+    assert "shot_failed_step01.png" in out
