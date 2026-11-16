@@ -124,7 +124,8 @@ Tests that start Godot are skipped when no Godot is found. CI runs everything on
 .claude-plugin/marketplace.json   lists the packs
 packs/<pack>/                     one plugin per pack: skills/, hooks/, scripts/, servers/, .mcp.json
 tests/                            pytest suite and fixture Godot projects
-docs/plan.md                      roadmap
+tools/make_icons.py               draws the pack icons
+docs/backlog.md                   ideas waiting for real use
 ```
 
 ## License
