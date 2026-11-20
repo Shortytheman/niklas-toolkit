@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.0 (2026-11-20)
+
+- **core/commit_guard**: a hook that runs before Claude's `git commit` and `git push`. It stops changes that
+  contain secrets (private keys, AWS, GitHub, GitLab, Slack, Stripe, Google, OpenAI and Anthropic keys, `.env`
+  and key files) and commit or tag messages that match patterns you forbid in `toolkit.json` or in the user
+  config, which then holds in every repository. For a push it checks everything not yet on a remote. Secrets are
+  shown masked, `commit-guard: allow` on a line opts it out, and the guard never blocks because of its own error.
+
 ## 0.14.0 (2026-11-16)
 
 - **audit/usage_report** shows where your tokens go: by day, project, model and session, with the cache share,

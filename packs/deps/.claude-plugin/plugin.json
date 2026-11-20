@@ -1,6 +1,6 @@
 {
   "name": "deps",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Dependency health for any project: known vulnerabilities (OSV.dev), outdated packages and licenses for PyPI, npm, crates.io, Go, Packagist and RubyGems. No API keys.",
   "author": {
     "name": "Niklas"

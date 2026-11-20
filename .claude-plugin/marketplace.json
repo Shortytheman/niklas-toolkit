@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Claude Code toolkit: a general core pack, Godot 4 tools, dependency health, everyday information and markets, and an audit of your Claude Code setup.",
-    "version": "0.14.0"
+    "version": "0.15.0"
   },
   "plugins": [
     {

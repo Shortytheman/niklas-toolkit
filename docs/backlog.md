@@ -8,6 +8,7 @@ Ideas and fixes waiting for real use to justify them. The `learn` skill adds lin
 
 ## Done
 
+- `commit_guard` hook (0.15.0)
 - `usage_report`, skill trigger evals (0.14.0)
 - `godot_api` engine API lookup and MCP tool (0.13.0)
 - `pck_size` build size reports, `env_doctor`, scheduled brief survives plugin updates (0.12.0)
