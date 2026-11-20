@@ -2,7 +2,7 @@
 """Show or create the brief pack's settings file.
 
     python brief_config.py            where the file is and what it contains (API keys masked)
-    python brief_config.py --init     write a starter file if there is none
+    python brief_config.py --init     write a starter file, or add the missing brief settings to an existing one
 
 The file is personal: it lives in your user folder, never in a project, so keys and holdings are not committed.
 """
@@ -41,12 +41,24 @@ def masked(cfg: dict) -> dict:
 def main(argv: list[str] | None = None) -> int:
     netlib.force_utf8_output()
     ap = argparse.ArgumentParser(description="Show or create the toolkit's personal settings file.")
-    ap.add_argument("--init", action="store_true", help="write a starter file if none exists")
+    ap.add_argument("--init", action="store_true", help="write a starter file, or add missing settings to an existing one")
     a = ap.parse_args(argv)
     path = netlib.config_path()
     if a.init:
         if path.exists():
-            print(f"{path} already exists; not overwriting it.")
+            # The file may already hold other packs' settings (commit_guard): add only what is missing.
+            try:
+                cfg = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as e:
+                print(f"ERROR: {path} is not valid JSON ({e}); fix it first.", file=sys.stderr)
+                return 2
+            missing = [k for k in TEMPLATE if k not in cfg]
+            if not missing:
+                print(f"{path} already has every brief setting; nothing changed.")
+                return 0
+            cfg.update({k: TEMPLATE[k] for k in missing})
+            path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+            print(f"Added {', '.join(missing)} to {path}; existing settings were kept.")
             return 0
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(TEMPLATE, indent=2) + "\n", encoding="utf-8")

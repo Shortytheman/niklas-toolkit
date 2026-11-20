@@ -401,3 +401,18 @@ def test_schedule_launcher_runs_newest_installed_version(tmp_path, monkeypatch):
     monkeypatch.setattr(schedule_brief, "BRIEF", checkout)
     schedule_brief.write_launcher()
     assert subprocess.run([sys.executable, str(launcher)]).returncode == 3
+
+
+def test_brief_config_init_keeps_other_settings(monkeypatch, tmp_path, capsys):
+    import brief_config
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("TOOLKIT_HOME", str(home))
+    (home / "config.json").write_text(json.dumps({"commit_guard": {"forbid": ["x"]}, "currency": "EUR"}),
+                                      encoding="utf-8")
+    assert brief_config.main(["--init"]) == 0
+    cfg = json.loads((home / "config.json").read_text(encoding="utf-8"))
+    assert cfg["commit_guard"] == {"forbid": ["x"]} and cfg["currency"] == "EUR" and "watchlist" in cfg
+    assert brief_config.main(["--init"]) == 0 and "nothing changed" in capsys.readouterr().out
+    (home / "config.json").write_text("{broken", encoding="utf-8")
+    assert brief_config.main(["--init"]) == 2
