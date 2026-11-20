@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.1 (2026-11-20)
+
+- **brief_config --init** adds the missing brief settings to an existing settings file (which may already hold
+  `commit_guard` rules) instead of refusing to touch it.
+
 ## 0.15.0 (2026-11-20)
 
 - **core/commit_guard**: a hook that runs before Claude's `git commit` and `git push`. It stops changes that
