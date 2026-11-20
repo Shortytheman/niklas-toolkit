@@ -1,7 +1,7 @@
 {
   "name": "core",
   "version": "0.14.0",
-  "description": "General tools used in every project: verify, learn, handoff.",
+  "description": "General tools for every project: verify, learn, handoff, release notes, docs checks, a reviewer agent, and a commit guard that stops secrets and forbidden messages before git commit or push.",
   "author": {
     "name": "Niklas"
   },

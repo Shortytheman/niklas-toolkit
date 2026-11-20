@@ -39,6 +39,7 @@ much). To try a pack from a local checkout: `claude --plugin-dir ./packs/deps`.
 | `handoff` | skill | Saves the state of unfinished work to `.claude/handoff.md` and resumes from it in the next session |
 | `release` | script + skill | Drafts the changelog from commits since the last tag, suggests the next semver version, and walks through bump, commit and tag |
 | `docs-check` | script + skill | Broken relative links (letter case included), missing `#anchors`, script paths in code blocks that no longer exist, and with `--external` dead web links |
+| `commit_guard` | hook | Before Claude runs `git commit` or `git push`: stops changes that contain secrets (private keys, cloud and API tokens, `.env` files) and commit or tag messages that match patterns you forbid, such as attribution lines. Checks what a push would publish, not just the last commit |
 | `reviewer` | agent | Reviews a finished diff in a fresh context for bugs, missed callers and broken project rules, and confirms each finding before reporting it |
 
 ### `deps`: dependency health, any language
@@ -138,6 +139,7 @@ Optional, in the project root:
   "gdscript": {"format": false, "lint": true, "disable": ["max-line-length"]},
   "doctor": {"ignore": ["res://assets/sfx/"]},
   "deps": {"ignore": ["GHSA-xxxx-xxxx-xxxx"]},
+  "commit_guard": {"forbid": ["(?i)co-authored-by:"], "allow_paths": ["tests/fixtures/*"]},
   "verify": [{"name": "tests", "run": "python -m pytest -q", "timeout": 900}]
 }
 ```
@@ -150,6 +152,7 @@ Optional, in the project root:
 | `gdscript.format` / `gdscript.disable` | Run `gdformat` after each edit (only for gdformat-clean code); gdlint rules not to report |
 | `doctor.ignore` | Regular expressions for known doctor findings |
 | `deps.ignore` | Advisory ids (GHSA, CVE, PYSEC...) accepted after review |
+| `commit_guard.forbid` / `commit_guard.allow_paths` | Regular expressions no commit or tag message may contain, and file globs the secret scan skips. The same keys in the user config (`%LOCALAPPDATA%/niklas-toolkit/config.json`, `~/.config/niklas-toolkit/config.json` elsewhere) apply to every repository |
 | `verify` | Checks for `verify.py`: `name`, `run` (a shell command), optional `timeout` and `cwd` |
 
 ## Results
